@@ -16,11 +16,12 @@ public class HeroScoreboard extends JavaPlugin {
     public Economy econ;
     public Heroes heroes;
     protected FileConfiguration config;
+    private PlayerStatManager playerStatManager;
     
     @Override
     public void onDisable() {
         // TODO: Place any custom disable code here.
-        System.out.println(this + " is now disabled!");
+        System.out.println("[HeroScoreboard] is now disabled!");
     }
 
     @Override
@@ -32,14 +33,22 @@ public class HeroScoreboard extends JavaPlugin {
         config.options().copyDefaults(true);
         saveConfig();
         
-        PluginManager pm = this.getServer().getPluginManager();
-        pm.registerEvent(Type.ENTITY_DAMAGE, new PvPListener(this), Priority.Monitor, this);
+        playerStatManager = new PlayerStatManager(this, config);
         
-        System.out.println(this + " is now enabled!");
+        //Register the pvp listener
+        PluginManager pm = this.getServer().getPluginManager();
+        pm.registerEvent(Type.ENTITY_DAMAGE, new PvPListener(this, playerStatManager), Priority.Monitor, this);
+        
+        System.out.println("[HeroScoreboard] is now enabled!");
     }
     
     @Override
     public boolean onCommand(CommandSender sender, org.bukkit.command.Command command, String label, String[] args) {
+        //TODO handle command /heroscore
+        
+        //TODO handle command /heroscore list pagenumber
+        
+        //TODO handle command /heroscore stats playername
         return false;
     }
     

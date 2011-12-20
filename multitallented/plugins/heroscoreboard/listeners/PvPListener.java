@@ -2,6 +2,7 @@ package multitallented.plugins.heroscoreboard.listeners;
 
 import com.herocraftonline.dev.heroes.hero.Hero;
 import multitallented.plugins.heroscoreboard.HeroScoreboard;
+import multitallented.plugins.heroscoreboard.PlayerStatManager;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -16,9 +17,11 @@ import org.bukkit.event.entity.EntityListener;
  */
 public class PvPListener extends EntityListener {
     private final HeroScoreboard plugin;
+    private final PlayerStatManager psm;
 
-    public PvPListener(HeroScoreboard aThis) {
+    public PvPListener(HeroScoreboard aThis, PlayerStatManager psm) {
         this.plugin=aThis;
+        this.psm = psm;
     }
     
     @Override

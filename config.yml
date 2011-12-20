@@ -1,0 +1,49 @@
+ignored-skills:
+  - Track
+  - Scan
+  - Farsight
+level-range: 50
+repeat-kill-cooldown: 60
+pvp-drops:
+  - BONE:4
+points:
+  base-reward: 1.0
+  valuable-items:
+    - DIAMOND_SWORD:1.0
+    - DIAMOND_HELMET:1.0
+    - DIAMOND_CHESTPLATE:2.0
+    - DIAMOND_AXE:1.0
+    - DIAMOND_LEGGINGS:2.0
+    - DIAMOND_BOOTS:1.0
+    - IRON_CHESTPLATE:1.0
+    - IRON_LEGGINGS:1.0
+    - IRON_SWORD:0.5
+    - IRON_BOOTS:0.5
+    - IRON_HELMET:0.5
+    - GOLDEN_APPLE:5.0
+  half-health-bonus: 0.0
+  quarter-health-bonus: 1.0
+  bonus-per-killstreak: 0.2
+  bonus-per-killjoy: 0.1
+  bonus-per-level: 0.05
+economy:
+  base-reward: 100.0
+  percent-stolen: 0.1
+  base-dropped: 10.0
+  percent-dropped: 0.05
+  valuable-items:
+    - DIAMOND_SWORD:10.0
+    - DIAMOND_HELMET:50.0
+    - DIAMOND_CHESTPLATE:80.0
+    - DIAMOND_AXE:30.0
+    - DIAMOND_LEGGINGS:70.0
+    - DIAMOND_BOOTS:40.0
+    - IRON_CHESTPLATE:20.0
+    - IRON_LEGGINGS:16.0
+    - IRON_SWORD:5.0
+    - GOLDEN_APPLE:100.0
+  half-health-bonus: 10.0
+  quarter-health-bonus: 10.0
+  bonus-per-killstreak: 1.0
+  bonus-per-killjoy: 1.0
+  bonus-per-level: 1.0

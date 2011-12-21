@@ -3,6 +3,8 @@ package multitallented.plugins.heroscoreboard.listeners;
 import com.herocraftonline.dev.heroes.hero.Hero;
 import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import multitallented.plugins.heroscoreboard.PlayerStatManager;
+import multitallented.plugins.heroscoreboard.PlayerStats;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -47,9 +49,30 @@ public class PvPListener extends EntityListener {
         if (hero != null)
             dHero = plugin.heroes.getHeroManager().getHero(dPlayer);
         
-        //Record the info
+        //TODO Check for valid kill
         
-        //Display the info using an async task
+        PlayerStats ps = psm.getPlayerStats(dPlayer.getName());
+        ps.setKills(ps.getKills()+1);
+        
+        PlayerStats psv = psm.getPlayerStats(player.getName());
+        psv.setDeaths(psv.getDeaths()+1);
+        
+        ps.addWeapon(dPlayer.getItemInHand().getType().name().replace("_", " ").toLowerCase());
+        ps.addNemesis(player.getDisplayName());
+        
+        ps.setKillstreak(ps.getKillstreak()+1);
+        if (ps.getKillstreak() >= 3) {
+            plugin.getServer().broadcastMessage(ChatColor.GRAY + "[HeroScoreboard] " + dPlayer.getDisplayName() + " is on a killstreak of " + ChatColor.RED + ps.getKillstreak());
+        }
+        if (psv.getKillstreak() >= 3) {
+            plugin.getServer().broadcastMessage(ChatColor.GRAY + "[HeroScoreboard] " + dPlayer.getDisplayName() + " just ended "
+                    + player.getDisplayName() + "'s killstreak of " + ChatColor.RED + psv.getKillstreak());
+        }
+        psv.setKillstreak(0);
+        
+        //TODO calculate points and display them
+        
+        //TODO Display the points info using an async task
         
     }
     

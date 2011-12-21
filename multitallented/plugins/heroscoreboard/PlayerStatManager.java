@@ -1,13 +1,21 @@
 package multitallented.plugins.heroscoreboard;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -69,8 +77,24 @@ public class PlayerStatManager {
         
         File playerFolder = new File(plugin.getDataFolder(), "data"); // Setup the Data Folder if it doesn't already exist
         playerFolder.mkdirs();
-        
-        //TODO load player stats from the file
+        FileConfiguration dataConfig = null;
+        for (File dataFile : playerFolder.listFiles()) {
+            try {
+                //Load saved region data
+                dataConfig = new YamlConfiguration();
+                dataConfig.load(dataFile);
+                PlayerStats ps = new PlayerStats();
+                ps.setNemesis(processListMap(dataConfig.getStringList("nemeses")));
+                ps.setSkill(processListMap(dataConfig.getStringList("skills")));
+                ps.setWeapon(processListMap(dataConfig.getStringList("weapons")));
+                ps.setDeaths(dataConfig.getInt("deaths"));
+                ps.setKills(dataConfig.getInt("kills"));
+                playerStats.put(dataFile.getName().replace(".yml", ""), ps);
+            } catch (Exception e) {
+                System.out.println("[HeroScoreboard] failed to load data from " + dataFile.getName());
+                System.out.println(e.getStackTrace());
+            }
+        }
     }
     
     private List<ItemStack> processItemStackList(List<String> list) {
@@ -91,11 +115,50 @@ public class PlayerStatManager {
         return tempMap;
     }
     
+    private HashMap<String, Integer> processListMap(List<String> list) {
+        HashMap<String, Integer> tempMap = new HashMap<String, Integer>();
+        for (String s : list) {
+            String[] args = s.split(":");
+            tempMap.put(args[0], Integer.parseInt(args[1]));
+        }
+        return tempMap;
+    }
+    
     public PlayerStats getPlayerStats(String name) {
         if (playerStats.containsKey(name)) {
             return playerStats.get(name);
         } else {
             return null;
+        }
+    }
+    public void setPlayerStats(String name, PlayerStats ps) {
+        playerStats.put(name, ps);
+        File dataFile =  new File(plugin.getDataFolder() + "/data", name + ".yml");
+        if (!dataFile.exists()) {
+            try {
+                dataFile.createNewFile();
+            } catch (IOException ex) {
+                System.out.println("[HeroScoreboard] could not create file: " + name + ".yml");
+                return;
+            }
+        }
+        FileConfiguration dataConfig = new YamlConfiguration();
+        try {
+            dataConfig.load(dataFile);
+        } catch (Exception ex) {
+            System.out.println("[HeroScoreboard] could not load file: " + name + ".yml");
+            return;
+        }
+        dataConfig.set("kills", ps.getKills());
+        dataConfig.set("deaths", ps.getDeaths());
+        dataConfig.set("weapons", ps.getWeapon());
+        dataConfig.set("skills", ps.getSkill());
+        dataConfig.set("nemeses", ps.getNemesis());
+        try {
+            dataConfig.save(dataFile);
+        } catch (IOException ex) {
+            System.out.println("[HeroScoreboard] could not save file: " + name + ".yml");
+            return;
         }
     }
     

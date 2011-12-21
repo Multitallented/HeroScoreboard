@@ -24,7 +24,7 @@ public class HeroScoreboard extends JavaPlugin {
     
     @Override
     public void onDisable() {
-        // TODO: Place any custom disable code here.
+        //TODO write any disable code here
         System.out.println("[HeroScoreboard] is now disabled!");
     }
 
@@ -49,22 +49,36 @@ public class HeroScoreboard extends JavaPlugin {
     @Override
     public boolean onCommand(CommandSender sender, org.bukkit.command.Command command, String label, String[] args) {
         if (args.length > 1 && args[0].equalsIgnoreCase("stats")) {
-            for (Player p : this.getServer().getOnlinePlayers()) {
-                if (p.getName().equals(args[1])) {
-                    PlayerStats ps = playerStatManager.getPlayerStats(args[1]);
-                    if (ps != null) {
-                        String message = ChatColor.GRAY + "[HeroScoreboard] " + p.getName() + "= K:" + ps.getKills();
-                        message += " D:" + ps.getDeaths() + " K/D: " + NumberFormat.getPercentInstance().format(ps.getKills() / ps.getDeaths());
-                        message += " weapon:" + ps.getWeapon().split(":")[0];
-                        message += " skill:" + ps.getSkill().split(":")[0];
-                        
-                    }
-                    
+            Player p = this.getServer().getPlayer(args[1]);
+            if (p != null) {
+                PlayerStats ps = playerStatManager.getPlayerStats(p.getName());
+                if (ps != null) {
+                    String message = ChatColor.GRAY + "[HeroScoreboard] " + p.getName() + "= K:" + ps.getKills();
+                    message += " D:" + ps.getDeaths() + " K/D: " + NumberFormat.getPercentInstance().format(ps.getKills() / ps.getDeaths());
+                    message += " weapon:" + ps.getWeapon();
+                    message += " skill:" + ps.getSkill();
+                    message += " nemesis: " + ps.getNemesis();
+                    sender.sendMessage(message);
+                    return true;
                 }
             }
-            for (OfflinePlayer p : this.getServer().getOfflinePlayers()) {
-                
+            OfflinePlayer op = this.getServer().getOfflinePlayer(args[1]);
+            if (op != null) {
+                PlayerStats ps = playerStatManager.getPlayerStats(op.getName());
+                if (ps != null) {
+                    String message = ChatColor.GRAY + "[HeroScoreboard] " + p.getName() + "= K:" + ps.getKills();
+                    message += " D:" + ps.getDeaths();
+                    message += " K/D: " + NumberFormat.getPercentInstance().format(ps.getKills() / ps.getDeaths());
+                    message += " pts: " + ps.getPoints();
+                    message += " weapon:" + ps.getWeapon();
+                    message += " skill:" + ps.getSkill();
+                    message += " nemesis: " + ps.getNemesis();
+                    sender.sendMessage(message);
+                    return true;
+                }
             }
+            sender.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Could not find a player by the name of " + args[1]);
+            return true;
         }
         //TODO handle command /heroscore
         

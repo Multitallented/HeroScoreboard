@@ -1,19 +1,13 @@
 package multitallented.plugins.heroscoreboard;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -47,6 +41,7 @@ public class PlayerStatManager {
     private double econBonusKillStreak;
     private double econBonusKillJoy;
     private double econBonusLevel;
+    private double pointLoss;
     
     public PlayerStatManager(HeroScoreboard plugin, FileConfiguration config) {
         this.plugin = plugin;
@@ -63,6 +58,7 @@ public class PlayerStatManager {
         pointBonusKillStreak = config.getDouble("points.bonus-per-killstreak");
         pointBonusKillJoy = config.getDouble("points.bonus-per-killjoy");
         pointBonusLevel = config.getDouble("points.bonus-per-level");
+        pointLoss = config.getDouble("points.points-lost-on-death");
         
         econBase = config.getDouble("economy.base-reward");
         econPercentStolen = config.getDouble("economy.percent-stolen");
@@ -151,6 +147,8 @@ public class PlayerStatManager {
         }
         dataConfig.set("kills", ps.getKills());
         dataConfig.set("deaths", ps.getDeaths());
+        dataConfig.set("killstreak", ps.getKillstreak());
+        dataConfig.set("points", ps.getPoints());
         dataConfig.set("weapons", ps.getWeapon());
         dataConfig.set("skills", ps.getSkill());
         dataConfig.set("nemeses", ps.getNemesis());
@@ -159,6 +157,17 @@ public class PlayerStatManager {
         } catch (IOException ex) {
             System.out.println("[HeroScoreboard] could not save file: " + name + ".yml");
             return;
+        }
+    }
+    public void addPlayerStatsDeath(String name) {
+        if (playerStats.containsKey(name)) {
+            PlayerStats ps = playerStats.get(name);
+            ps.setDeaths(ps.getDeaths()+1);
+            ps.setKillstreak(0);
+            ps.setPoints(ps.getPoints() - pointLoss);
+            playerStats.put(name, ps);
+        } else {
+            System.out.println("[HeroScoreboard] Could not add death to " + name);
         }
     }
     
@@ -170,5 +179,32 @@ public class PlayerStatManager {
     }
     public long getRepeatKillCooldown() {
         return this.killCooldown;
+    }
+    public List<ItemStack> getPVPDrops() {
+        return pvpDrops;
+    }
+    public EnumMap<Material, Double> getPointValuables() {
+        return this.pointValuables;
+    }
+    public double getPointHalfHealth() {
+        return this.pointHalfHealth;
+    }
+    public double getPointQuarterHealth() {
+        return this.pointQuarterHealth;
+    }
+    public double getPointBonusKillStreak() {
+        return this.pointBonusKillStreak;
+    }
+    public double getPointBonusKillJoy() {
+        return this.pointBonusKillJoy;
+    }
+    public double getPointBase() {
+        return this.pointBase;
+    }
+    public double getPointBonusLevel() {
+        return this.pointBonusLevel;
+    }
+    public double getPointLoss() {
+        return this.pointLoss;
     }
 }

@@ -7,7 +7,7 @@ repeat-kill-cooldown: 60
 pvp-drops:
   - BONE:4
 points:
-  base-reward: 1.0
+  base-reward: 10.0
   valuable-items:
     - DIAMOND_SWORD:1.0
     - DIAMOND_HELMET:1.0
@@ -26,6 +26,7 @@ points:
   bonus-per-killstreak: 0.2
   bonus-per-killjoy: 0.1
   bonus-per-level: 0.05
+  points-lost-on-death: 5.0
 economy:
   base-reward: 100.0
   percent-stolen: 0.1

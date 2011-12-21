@@ -2,10 +2,14 @@ package multitallented.plugins.heroscoreboard;
 
 import multitallented.plugins.heroscoreboard.listeners.PvPListener;
 import com.herocraftonline.dev.heroes.Heroes;
+import java.text.NumberFormat;
 import multitallented.plugins.heroscoreboard.listeners.PluginListener;
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event.Type;
 import org.bukkit.plugin.PluginManager;
@@ -44,11 +48,27 @@ public class HeroScoreboard extends JavaPlugin {
     
     @Override
     public boolean onCommand(CommandSender sender, org.bukkit.command.Command command, String label, String[] args) {
+        if (args.length > 1 && args[0].equalsIgnoreCase("stats")) {
+            for (Player p : this.getServer().getOnlinePlayers()) {
+                if (p.getName().equals(args[1])) {
+                    PlayerStats ps = playerStatManager.getPlayerStats(args[1]);
+                    if (ps != null) {
+                        String message = ChatColor.GRAY + "[HeroScoreboard] " + p.getName() + "= K:" + ps.getKills();
+                        message += " D:" + ps.getDeaths() + " K/D: " + NumberFormat.getPercentInstance().format(ps.getKills() / ps.getDeaths());
+                        message += " weapon:" + ps.getWeapon().split(":")[0];
+                        message += " skill:" + ps.getSkill().split(":")[0];
+                        
+                    }
+                    
+                }
+            }
+            for (OfflinePlayer p : this.getServer().getOfflinePlayers()) {
+                
+            }
+        }
         //TODO handle command /heroscore
         
         //TODO handle command /heroscore list pagenumber
-        
-        //TODO handle command /heroscore stats playername
         return false;
     }
     

@@ -69,6 +69,8 @@ public class PlayerStatManager {
         
         File playerFolder = new File(plugin.getDataFolder(), "data"); // Setup the Data Folder if it doesn't already exist
         playerFolder.mkdirs();
+        
+        //TODO load player stats from the file
     }
     
     private List<ItemStack> processItemStackList(List<String> list) {
@@ -87,6 +89,14 @@ public class PlayerStatManager {
             tempMap.put(Material.getMaterial(params[0]), Double.parseDouble(params[1]));
         }
         return tempMap;
+    }
+    
+    public PlayerStats getPlayerStats(String name) {
+        if (playerStats.containsKey(name)) {
+            return playerStats.get(name);
+        } else {
+            return null;
+        }
     }
     
     public List<String> getIgnoredSkills() {

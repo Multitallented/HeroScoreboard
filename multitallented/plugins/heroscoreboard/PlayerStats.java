@@ -1,5 +1,6 @@
 package multitallented.plugins.heroscoreboard;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,12 +11,11 @@ import java.util.Map;
 public class PlayerStats {
     private int kills=0;
     private int deaths=0;
-    private Map<String, Integer> nemeses;
-    private Map<String, Integer> weapons;
-    private Map<String, Integer> skills;
+    private Map<String, Integer> nemeses = new HashMap<String, Integer>();
+    private Map<String, Integer> weapons = new HashMap<String, Integer>();
+    private Map<String, Integer> skills = new HashMap<String, Integer>();
     private double points = 0;
-    private int killstreak;
-    //TODO add stuff for storage here.
+    private int killstreak = 0;
     
     public int getKills() {
         return kills;
@@ -94,6 +94,13 @@ public class PlayerStats {
             }
         }
         return bestNemesis;
+    }
+    public ArrayList<String> getSkills() {
+        ArrayList<String> tempArray = new ArrayList<String>();
+        for (String s : skills.keySet()) {
+            tempArray.add(s + ":" + skills.get(s));
+        }
+        return tempArray;
     }
     public void addNemesis(String nemesis) {
         if (nemeses.containsKey(nemesis)) {

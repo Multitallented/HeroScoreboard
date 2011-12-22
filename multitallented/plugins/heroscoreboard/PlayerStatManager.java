@@ -7,6 +7,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -85,16 +86,20 @@ public class PlayerStatManager {
                 ps.setWeapon(processListMap(dataConfig.getStringList("weapons")));
                 ps.setDeaths(dataConfig.getInt("deaths"));
                 ps.setKills(dataConfig.getInt("kills"));
+                ps.setPoints(dataConfig.getDouble("points"));
+                ps.setKillstreak(dataConfig.getInt("killstreak"));
                 playerStats.put(dataFile.getName().replace(".yml", ""), ps);
             } catch (Exception e) {
                 System.out.println("[HeroScoreboard] failed to load data from " + dataFile.getName());
-                System.out.println(e.getStackTrace());
+                e.printStackTrace();
             }
         }
     }
     
     private List<ItemStack> processItemStackList(List<String> list) {
         ArrayList<ItemStack> tempArray = new ArrayList<ItemStack>();
+        if (list == null)
+            return tempArray;
         for (String s : list) {
             String[] params = s.split(":");
             tempArray.add(new ItemStack(Material.getMaterial(params[0]), Integer.parseInt(params[1])));
@@ -104,6 +109,8 @@ public class PlayerStatManager {
     
     private EnumMap<Material, Double> processEnumMap(List<String> list) {
         EnumMap<Material, Double> tempMap = new EnumMap<Material, Double>(Material.class);
+        if (list == null)
+            return tempMap;
         for (String s : list) {
             String[] params = s.split(":");
             tempMap.put(Material.getMaterial(params[0]), Double.parseDouble(params[1]));
@@ -113,6 +120,8 @@ public class PlayerStatManager {
     
     private HashMap<String, Integer> processListMap(List<String> list) {
         HashMap<String, Integer> tempMap = new HashMap<String, Integer>();
+        if (list == null)
+            return tempMap;
         for (String s : list) {
             String[] args = s.split(":");
             tempMap.put(args[0], Integer.parseInt(args[1]));
@@ -160,17 +169,97 @@ public class PlayerStatManager {
         }
     }
     public void addPlayerStatsDeath(String name) {
+        File dataFile =  new File(plugin.getDataFolder() + "/data", name + ".yml");
+        if (!dataFile.exists()) {
+            try {
+                dataFile.createNewFile();
+            } catch (IOException ex) {
+                System.out.println("[HeroScoreboard] could not create file: " + name + ".yml");
+                return;
+            }
+        }
+        FileConfiguration dataConfig = new YamlConfiguration();
+        try {
+            dataConfig.load(dataFile);
+        } catch (Exception ex) {
+            System.out.println("[HeroScoreboard] could not load file: " + name + ".yml");
+            return;
+        }
         if (playerStats.containsKey(name)) {
             PlayerStats ps = playerStats.get(name);
             ps.setDeaths(ps.getDeaths()+1);
             ps.setKillstreak(0);
             ps.setPoints(ps.getPoints() - pointLoss);
             playerStats.put(name, ps);
+            dataConfig.set("deaths", ps.getDeaths());
+            dataConfig.set("killstreak", 0);
+            dataConfig.set("points", ps.getPoints());
         } else {
-            System.out.println("[HeroScoreboard] Could not add death to " + name);
+            PlayerStats ps = new PlayerStats();
+            ps.setDeaths(1);
+            dataConfig.set("kills", 0);
+            dataConfig.set("deaths", 1);
+            dataConfig.set("killstreak", 0);
+            dataConfig.set("points", -pointLoss);
+            dataConfig.set("weapons", new ArrayList<String>());
+            dataConfig.set("skills", new ArrayList<String>());
+            dataConfig.set("nemeses", new ArrayList<String>());
+            playerStats.put(name, ps);
+        }
+        try {
+            dataConfig.save(dataFile);
+        } catch (IOException ex) {
+            System.out.println("[HeroScoreboard] could not save file: " + name + ".yml");
+            return;
+        }
+    }
+    public void addSkill(String name, String skillName) {
+        File dataFile =  new File(plugin.getDataFolder() + "/data", name + ".yml");
+        if (!dataFile.exists()) {
+            try {
+                dataFile.createNewFile();
+            } catch (IOException ex) {
+                System.out.println("[HeroScoreboard] could not create file: " + name + ".yml");
+                return;
+            }
+        }
+        FileConfiguration dataConfig = new YamlConfiguration();
+        try {
+            dataConfig.load(dataFile);
+        } catch (Exception ex) {
+            System.out.println("[HeroScoreboard] could not load file: " + name + ".yml");
+            return;
+        }
+        if (playerStats.containsKey(name)) {
+            PlayerStats ps = playerStats.get(name);
+            ps.addSkill(skillName);
+            playerStats.put(name, ps);
+            dataConfig.set("skills", ps.getSkill());
+        } else {
+            ArrayList<String> tempArray = new ArrayList<String>();
+            tempArray.add(skillName);
+            PlayerStats ps = new PlayerStats();
+            ps.addSkill(skillName);
+            dataConfig.set("kills", 0);
+            dataConfig.set("deaths", 0);
+            dataConfig.set("killstreak", 0);
+            dataConfig.set("points", 0);
+            dataConfig.set("weapons", new ArrayList<String>());
+            dataConfig.set("skills", tempArray);
+            dataConfig.set("nemeses", new ArrayList<String>());
+            playerStats.put(name, ps);
+        }
+        try {
+            dataConfig.save(dataFile);
+        } catch (IOException ex) {
+            System.out.println("[HeroScoreboard] could not save file: " + name + ".yml");
+            return;
         }
     }
     
+    public Set<String> getPlayerStatKeys() {
+        return playerStats.keySet();
+    }
     public List<String> getIgnoredSkills() {
         return this.ignoredSkills;
     }

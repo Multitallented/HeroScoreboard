@@ -44,7 +44,7 @@ public class PvPListener extends EntityListener {
         if (event.getCause() == DamageCause.PROJECTILE) {
             damager = ((Projectile)damager).getShooter();
         }
-        if (!(damager instanceof Player)) {
+        if (!(damager instanceof Player) || !((Player) damager).hasPermission("heroscoreboard.participate")) {
             return;
         }
         Player player = (Player) edBy.getEntity();
@@ -55,23 +55,32 @@ public class PvPListener extends EntityListener {
         Hero dHero = null;
         if (hero != null)
             dHero = plugin.heroes.getHeroManager().getHero(dPlayer);
+        //Check if repeat kill
+        if (lastKilled.containsKey(player) && (new Date()).getTime() - lastKilled.get(player) < psm.getRepeatKillCooldown())
+            return;
+        
+        lastKilled.put(player, new Date().getTime());
+        //Check if level range too great
+        if (hero != null && dHero.getLevel() - hero.getLevel() > psm.getLevelRange()) {
+            dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Level difference (" + (dHero.getLevel() - hero.getLevel()) + ") too large. No points given.");
+            return;
+        }
         
         //Drop any items in the PvPDrops list
         for (ItemStack is : psm.getPVPDrops()) {
             player.getWorld().dropItemNaturally(player.getLocation(), is);
         }
         
-        //Check if repeat kill
-        if (lastKilled.containsKey(player) && (new Date()).getTime() - lastKilled.get(player) < psm.getRepeatKillCooldown())
-            return;
-        //Check if level range too great
-        if (hero != null && dHero.getLevel() - hero.getLevel() > psm.getLevelRange())
-            return;
-        
         PlayerStats ps = psm.getPlayerStats(dPlayer.getName());
+        if (ps == null) {
+            ps = new PlayerStats();
+        }
         ps.setKills(ps.getKills()+1);
         
         PlayerStats psv = psm.getPlayerStats(player.getName());
+        if (psv == null) {
+            psv = new PlayerStats();
+        }
         psv.setDeaths(psv.getDeaths()+1);
         
         ps.addWeapon(dPlayer.getItemInHand().getType().name().replace("_", " ").toLowerCase());
@@ -114,7 +123,7 @@ public class PvPListener extends EntityListener {
             points += pointLevelBonus;
         }
         //save points
-        ps.setPoints(points);
+        ps.setPoints(ps.getPoints() + points);
         
         psm.setPlayerStats(dPlayer.getName(), ps);
         psm.addPlayerStatsDeath(player.getName());

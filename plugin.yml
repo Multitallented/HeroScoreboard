@@ -2,7 +2,7 @@ author: multitallented
 database: false
 description: Keeps track of players kills/deaths among other things.
 generator: http://dinnerbone.com/minecraft/tools/pluginator/
-main: multitallented.plugins.heroscoreboard.Heroscoreboard
+main: multitallented.plugins.heroscoreboard.HeroScoreboard
 name: HeroScoreboard
 startup: postworld
 url: http://dev.bukkit.org/server-mods/heroscoreboard/
@@ -15,4 +15,4 @@ commands:
 permissions:
    heroscoreboard.partcipate:
       description: Lets you earn score with HeroScoreboard
-      default: all
+      default: true

@@ -43,6 +43,7 @@ public class PlayerStatManager {
     private double econBonusKillJoy;
     private double econBonusLevel;
     private double pointLoss;
+    private double econBaseStolen;
     
     public PlayerStatManager(HeroScoreboard plugin, FileConfiguration config) {
         this.plugin = plugin;
@@ -51,6 +52,7 @@ public class PlayerStatManager {
         levelRange = config.getInt("level-range");
         killCooldown = config.getInt("repeat-kill-cooldown") * 1000;
         pvpDrops = processItemStackList(config.getStringList("pvp-drops"));
+        killCooldown = killCooldown < 1000 ? 1000 : killCooldown;
         
         pointBase = config.getDouble("points.base-reward");
         pointValuables = processEnumMap(config.getStringList("points.valuable-items"));
@@ -62,6 +64,7 @@ public class PlayerStatManager {
         pointLoss = config.getDouble("points.points-lost-on-death");
         
         econBase = config.getDouble("economy.base-reward");
+        econBaseStolen = config.getDouble("economy.base-stolen");
         econPercentStolen = config.getDouble("economy.percent-stolen");
         econBaseDrop = config.getDouble("economy.base-dropped");
         econPercentDrop = config.getDouble("economy.percent-dropped");
@@ -263,6 +266,9 @@ public class PlayerStatManager {
     public List<String> getIgnoredSkills() {
         return this.ignoredSkills;
     }
+    public boolean containsIgnoredSkill(String skillname) {
+        return ignoredSkills.contains(skillname);
+    }
     public int getLevelRange() {
         return this.levelRange;
     }
@@ -295,5 +301,38 @@ public class PlayerStatManager {
     }
     public double getPointLoss() {
         return this.pointLoss;
+    }
+    public double getEconBase() {
+        return this.econBase;
+    }
+    public double getEconBaseStolen() {
+        return this.econBaseStolen;
+    }
+    public double getEconPercentStolen() {
+        return this.econPercentStolen;
+    }
+    public double getEconBaseDrop() {
+        return this.econBaseDrop;
+    }
+    public double getEconPercentDrop() {
+        return this.econPercentDrop;
+    }
+    public double getEconBonusKillJoy() {
+        return this.econBonusKillJoy;
+    }
+    public double getEconBonusKillStreak() {
+        return this.econBonusKillStreak;
+    }
+    public double getEconBonusLevel() {
+        return this.econBonusLevel;
+    }
+    public double getEconHalfHealth() {
+        return this.econHalfHealth;
+    }
+    public double getEconQuarterHealth() {
+        return this.econQuarterHealth;
+    }
+    public EnumMap<Material, Double> getEconValuables() {
+        return this.econValuables;
     }
 }

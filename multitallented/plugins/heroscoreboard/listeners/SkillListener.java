@@ -22,7 +22,7 @@ public class SkillListener extends CustomEventListener {
             return;
         
         SkillUseEvent sue = (SkillUseEvent) event;
-        if (sue.isCancelled())
+        if (sue.isCancelled() || psm.containsIgnoredSkill(sue.getSkill().getName()))
             return;
         
         Player player = sue.getPlayer();

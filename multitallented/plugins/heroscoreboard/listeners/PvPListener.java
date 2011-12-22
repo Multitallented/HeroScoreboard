@@ -8,6 +8,7 @@ import java.util.Map;
 import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import multitallented.plugins.heroscoreboard.PlayerStatManager;
 import multitallented.plugins.heroscoreboard.PlayerStats;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
@@ -71,11 +72,38 @@ public class PvPListener extends EntityListener {
             player.getWorld().dropItemNaturally(player.getLocation(), is);
         }
         
+        double econBonus = 0;
+        double econPay = 0;
         PlayerStats ps = psm.getPlayerStats(dPlayer.getName());
         if (ps == null) {
             ps = new PlayerStats();
         }
         ps.setKills(ps.getKills()+1);
+        Economy econ = HeroScoreboard.econ;
+        if (econ != null) {
+            double balance = econ.bankBalance(player.getName()).balance;
+            if (balance < psm.getEconBaseStolen()) {
+                if (balance > 0) {
+                    econBonus += balance;
+                    econPay = econBonus;
+                }
+                if (balance - econPay > 0) {
+                    econBonus += (balance - econPay) * psm.getEconPercentStolen();
+                    econPay = econBonus;
+                }
+                if (balance - econPay - psm.getEconBaseDrop() >0) {
+                    econPay += psm.getEconBaseDrop();
+                } else if (balance > 0) {
+                    econPay = balance;
+                }
+                balance = econ.bankWithdraw(player.getName(), econPay).balance;
+                if (balance >0) {
+                    econPay = balance * psm.getEconPercentDrop();
+                    econ.bankWithdraw(player.getName(), econPay);
+                }
+            }
+            econBonus += psm.getEconBase();
+        }
         
         PlayerStats psv = psm.getPlayerStats(player.getName());
         if (psv == null) {
@@ -88,10 +116,12 @@ public class PvPListener extends EntityListener {
         
         double killStreakBonus = psm.getPointBonusKillStreak() * ps.getKillstreak();
         ps.setKillstreak(ps.getKillstreak()+1);
+        econBonus += ps.getKillstreak() * psm.getEconBonusKillStreak();
         if (ps.getKillstreak() >= 3) {
             plugin.getServer().broadcastMessage(ChatColor.GRAY + "[HeroScoreboard] " + dPlayer.getDisplayName() + " is on a killstreak of " + ChatColor.RED + ps.getKillstreak());
         }
         double killJoyBonus = psm.getPointBonusKillJoy() * psv.getKillstreak();
+        econBonus += psv.getKillstreak() * psm.getEconBonusKillJoy();
         if (psv.getKillstreak() >= 3) {
             plugin.getServer().broadcastMessage(ChatColor.GRAY + "[HeroScoreboard] " + dPlayer.getDisplayName() + " just ended "
                     + player.getDisplayName() + "'s killstreak of " + ChatColor.RED + psv.getKillstreak());
@@ -100,10 +130,12 @@ public class PvPListener extends EntityListener {
         double points = psm.getPointBase();
         double preTotalValuables = 0;
         EnumMap<Material, Double> pointValuables = psm.getPointValuables();
+        EnumMap<Material, Double> econValuables = psm.getEconValuables();
         for (ItemStack is : player.getInventory().getContents()) {
-            if (is != null && pointValuables.containsKey(is.getType())) {
+            if (is != null && pointValuables.containsKey(is.getType()))
                 preTotalValuables += pointValuables.get(is.getType());
-            }
+            if (is != null && econValuables.containsKey(is.getType()))
+                econBonus += econValuables.get(is.getType());
         }
         points += preTotalValuables;
         
@@ -111,17 +143,23 @@ public class PvPListener extends EntityListener {
         if ((dHero == null && dPlayer.getHealth() <= 5)
                 || (dHero != null && dHero.getHealth() <= dHero.getMaxHealth() / 4)) {
             healthBonus += psm.getPointQuarterHealth() + psm.getPointHalfHealth();
+            econBonus += psm.getEconHalfHealth() + psm.getEconQuarterHealth();
         } else if ((dHero == null && dPlayer.getHealth() <= 10)
                 || (dHero != null && dHero.getHealth() <= dHero.getMaxHealth() / 2)) {
             healthBonus += psm.getPointHalfHealth();
+            econBonus += psm.getEconHalfHealth();
         }
         points += healthBonus;
         
         double pointLevelBonus = 0;
-        if (hero != null && hero.getLevel() > dHero.getLevel()) {
-            pointLevelBonus = (hero.getLevel() - dHero.getLevel()) * psm.getPointBonusLevel();
+        int levelDifference = hero.getLevel() - dHero.getLevel();
+        if (hero != null && levelDifference > 0) {
+            pointLevelBonus = levelDifference * psm.getPointBonusLevel();
             points += pointLevelBonus;
+            econBonus += levelDifference * psm.getEconBonusLevel();
         }
+        //pay econ bonus
+        econ.bankDeposit(dPlayer.getName(), econBonus); 
         //save points
         ps.setPoints(ps.getPoints() + points);
         
@@ -201,8 +239,6 @@ public class PvPListener extends EntityListener {
         }
         }, interval);
         
-        
-        //TODO calculate econ bonus and pay
     }
     
 }

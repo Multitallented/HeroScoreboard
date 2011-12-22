@@ -4,7 +4,6 @@ import multitallented.plugins.heroscoreboard.listeners.PvPListener;
 import com.herocraftonline.dev.heroes.Heroes;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import multitallented.plugins.heroscoreboard.listeners.PluginListener;
 import multitallented.plugins.heroscoreboard.listeners.SkillListener;
@@ -21,14 +20,14 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class HeroScoreboard extends JavaPlugin {
-    public Economy econ;
+    public static Economy econ;
     public Heroes heroes;
     protected FileConfiguration config;
     private PlayerStatManager playerStatManager;
     
     @Override
     public void onDisable() {
-        //TODO write any disable code here
+        //write any disable code here
         System.out.println("[HeroScoreboard] is now disabled!");
     }
 

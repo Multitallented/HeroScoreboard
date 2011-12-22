@@ -29,6 +29,7 @@ points:
   points-lost-on-death: 5.0
 economy:
   base-reward: 100.0
+  base-stolen: 30.0
   percent-stolen: 0.1
   base-dropped: 10.0
   percent-dropped: 0.05

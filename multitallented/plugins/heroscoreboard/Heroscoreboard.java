@@ -8,6 +8,7 @@ import java.util.List;
 import multitallented.plugins.heroscoreboard.listeners.PluginListener;
 import multitallented.plugins.heroscoreboard.listeners.SkillListener;
 import net.milkbowl.vault.economy.Economy;
+import net.milkbowl.vault.permission.Permission;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -20,10 +21,11 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class HeroScoreboard extends JavaPlugin {
-    public static Economy econ;
-    public Heroes heroes;
+    public static Economy econ = null;
+    public static Heroes heroes = null;
     protected FileConfiguration config;
     private PlayerStatManager playerStatManager;
+    public static Permission permission = null;
     
     @Override
     public void onDisable() {
@@ -41,6 +43,9 @@ public class HeroScoreboard extends JavaPlugin {
         saveConfig();
         
         playerStatManager = new PlayerStatManager(this, config);
+        
+        setupEconomy();
+        setupPermissions();
         
         //Register the pvp listener
         PluginManager pm = this.getServer().getPluginManager();
@@ -132,7 +137,7 @@ public class HeroScoreboard extends JavaPlugin {
                     }
                 }
             }
-            sender.sendMessage(ChatColor.GRAY + "[HeroStronghold] Top Players Page " + pageNumber);
+            sender.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Top Players Page " + pageNumber);
             for (int i=(pageNumber-1) * 8; i < topPlayers.size(); i++) {
                 PlayerStats ps = topPlayers.get(i);
                 sender.sendMessage(ChatColor.GRAY + "" + (i+1) + ". " + ChatColor.RED + players.get(i) + ChatColor.GRAY + " K:" + ChatColor.RED + ps.getKills() + ChatColor.GRAY +
@@ -149,16 +154,28 @@ public class HeroScoreboard extends JavaPlugin {
     }
     
     public void disableHeroes() {
-        this.heroes = null;
+        HeroScoreboard.heroes = null;
     }
     public void enableHeroes(Heroes heroes) {
-        this.heroes = heroes;
+        HeroScoreboard.heroes = heroes;
     }
     public boolean setupEconomy() {
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
         if (rsp != null) {
             econ = rsp.getProvider();
+            if (econ != null)
+                System.out.println("[HeroScoreboard] Hooked into " + econ.getName());
         }
         return econ != null;
+    }
+    private Boolean setupPermissions()
+    {
+        RegisteredServiceProvider<Permission> permissionProvider = getServer().getServicesManager().getRegistration(net.milkbowl.vault.permission.Permission.class);
+        if (permissionProvider != null) {
+            permission = permissionProvider.getProvider();
+            if (permission != null)
+                System.out.println("[HeroScoreboard] Hooked into " + permission.getName());
+        }
+        return (permission != null);
     }
 }

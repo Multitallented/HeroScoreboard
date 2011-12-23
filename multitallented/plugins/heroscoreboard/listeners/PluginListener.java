@@ -27,10 +27,11 @@ public class PluginListener extends ServerListener {
         if (name.equals("Heroes")) {
             System.out.println("[HeroScoreboard] " + name + " has been disabled! No longer hooking into Heroes.");
             plugin.disableHeroes();
-        } else if (name.equals("iConomy") || name.equals("BOSEconomy") || name.equals("Essentials")) {
-            System.out.println("[HeroScoreboard] is no longer hooked into " + name);
-            plugin.econ = null;
         }
+        /*else if (name.equals("iConomy") || name.equals("BOSEconomy") || name.equals("Essentials")) {
+            System.out.println("[HeroScoreboard] is no longer hooked into " + name);
+            HeroScoreboard.econ = null;
+        }*/
     }
 
     @Override
@@ -41,12 +42,13 @@ public class PluginListener extends ServerListener {
         
         if (name.equals("Heroes")) {
             plugin.enableHeroes((Heroes) currentPlugin);
-        } else if (name.equals("Vault") && (pm.isPluginEnabled("iConomy") || pm.isPluginEnabled("BOSEconomy") || pm.isPluginEnabled("Essentials"))
-                && plugin.econ == null) {
+        }
+        /*else if (name.equals("Vault") && (pm.isPluginEnabled("iConomy") || pm.isPluginEnabled("BOSEconomy") || pm.isPluginEnabled("Essentials"))
+                && HeroScoreboard.econ == null) {
             this.plugin.setupEconomy();
         } else if ((name.equals("iConomy") || name.equals("BOSEconomy") || name.equals("Essentials")) && pm.isPluginEnabled("Vault")
-                && plugin.econ == null) {
+                && HeroScoreboard.econ == null) {
             this.plugin.setupEconomy();
-        }
+        }*/
     }
 }

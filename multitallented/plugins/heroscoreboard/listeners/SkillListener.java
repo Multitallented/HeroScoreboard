@@ -1,6 +1,7 @@
 package multitallented.plugins.heroscoreboard.listeners;
 
 import com.herocraftonline.dev.heroes.api.SkillUseEvent;
+import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import multitallented.plugins.heroscoreboard.PlayerStatManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.CustomEventListener;
@@ -18,7 +19,7 @@ public class SkillListener extends CustomEventListener {
     
     @Override
     public void onCustomEvent(Event event) {
-        if (!(event instanceof SkillUseEvent))
+        if (HeroScoreboard.heroes == null || !(event instanceof SkillUseEvent))
             return;
         
         SkillUseEvent sue = (SkillUseEvent) event;

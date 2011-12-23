@@ -37,25 +37,27 @@ public class PvPListener extends EntityListener {
     @Override
     public void onEntityDamage(EntityDamageEvent event) {
         if (event.isCancelled() || !(event.getEntity() instanceof Player) || !(event instanceof EntityDamageByEntityEvent) || event.getDamage() == 0 ||
-                (plugin.heroes != null && event.getDamage() < plugin.heroes.getHeroManager().getHero((Player) event.getEntity()).getHealth()) ||
-                (plugin.heroes == null && ((Player) event.getEntity()).getHealth() > event.getDamage()))
+                (HeroScoreboard.heroes != null && event.getDamage() < HeroScoreboard.heroes.getHeroManager().getHero((Player) event.getEntity()).getHealth()) ||
+                (HeroScoreboard.heroes == null && ((Player) event.getEntity()).getHealth() > event.getDamage()))
             return;
         EntityDamageByEntityEvent edBy = (EntityDamageByEntityEvent) event;
         Entity damager = edBy.getDamager(); 
         if (event.getCause() == DamageCause.PROJECTILE) {
             damager = ((Projectile)damager).getShooter();
         }
-        if (!(damager instanceof Player) || !((Player) damager).hasPermission("heroscoreboard.participate")) {
+        if (!(damager instanceof Player)) {
             return;
         }
         Player player = (Player) edBy.getEntity();
         Hero hero = null;
-        if (plugin.heroes != null)
-            hero = plugin.heroes.getHeroManager().getHero(player);
+        if (HeroScoreboard.heroes != null)
+            hero = HeroScoreboard.heroes.getHeroManager().getHero(player);
         final Player dPlayer = (Player) damager;
+        if (!HeroScoreboard.permission.has(player.getWorld().getName(), dPlayer.getName(), "heroscoreboard.participate"))
+            return;
         Hero dHero = null;
         if (hero != null)
-            dHero = plugin.heroes.getHeroManager().getHero(dPlayer);
+            dHero = HeroScoreboard.heroes.getHeroManager().getHero(dPlayer);
         //Check if repeat kill
         if (lastKilled.containsKey(player) && (new Date()).getTime() - lastKilled.get(player) < psm.getRepeatKillCooldown())
             return;
@@ -129,6 +131,7 @@ public class PvPListener extends EntityListener {
         
         double points = psm.getPointBase();
         double preTotalValuables = 0;
+        points += killStreakBonus + killJoyBonus;
         EnumMap<Material, Double> pointValuables = psm.getPointValuables();
         EnumMap<Material, Double> econValuables = psm.getEconValuables();
         for (ItemStack is : player.getInventory().getContents()) {
@@ -152,14 +155,17 @@ public class PvPListener extends EntityListener {
         points += healthBonus;
         
         double pointLevelBonus = 0;
-        int levelDifference = hero.getLevel() - dHero.getLevel();
-        if (hero != null && levelDifference > 0) {
-            pointLevelBonus = levelDifference * psm.getPointBonusLevel();
-            points += pointLevelBonus;
-            econBonus += levelDifference * psm.getEconBonusLevel();
+        if (hero != null) {
+            int levelDifference = hero.getLevel() - dHero.getLevel();
+            if (levelDifference > 0) {
+                pointLevelBonus = levelDifference * psm.getPointBonusLevel();
+                points += pointLevelBonus;
+                econBonus += levelDifference * psm.getEconBonusLevel();
+            }
         }
         //pay econ bonus
-        econ.bankDeposit(dPlayer.getName(), econBonus); 
+        if (econ != null)
+            econ.bankDeposit(dPlayer.getName(), econBonus); 
         //save points
         ps.setPoints(ps.getPoints() + points);
         

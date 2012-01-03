@@ -5,6 +5,7 @@ import com.herocraftonline.dev.heroes.Heroes;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import multitallented.plugins.heroscoreboard.listeners.LogoutListener;
 import multitallented.plugins.heroscoreboard.listeners.PluginListener;
 import multitallented.plugins.heroscoreboard.listeners.SkillListener;
 import net.milkbowl.vault.economy.Economy;
@@ -51,7 +52,9 @@ public class HeroScoreboard extends JavaPlugin {
         PluginManager pm = this.getServer().getPluginManager();
         pm.registerEvent(Type.ENTITY_DAMAGE, new PvPListener(this, playerStatManager), Priority.Monitor, this);
         pm.registerEvent(Type.CUSTOM_EVENT, new SkillListener(playerStatManager), Priority.Monitor, this);
-        
+        if (playerStatManager.getUseCombatTag()) {
+            pm.registerEvent(Type.PLAYER_QUIT, new LogoutListener(playerStatManager), Priority.Monitor, this);
+        }
         System.out.println("[HeroScoreboard] is now enabled!");
     }
     
@@ -78,7 +81,7 @@ public class HeroScoreboard extends JavaPlugin {
             if (op != null) {
                 PlayerStats ps = playerStatManager.getPlayerStats(op.getName());
                 if (ps != null) {
-                    String message = ChatColor.GRAY + "[HeroScoreboard] " + p.getName();
+                    String message = ChatColor.GRAY + "[HeroScoreboard] " + op.getName();
                     message += " K:" + ChatColor.RED + ps.getKills() + ChatColor.GRAY;
                     message += " D:" + ChatColor.RED + ps.getDeaths() + ChatColor.GRAY;
                     message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format(ps.getKills() / (ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;

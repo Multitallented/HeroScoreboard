@@ -11,6 +11,8 @@ import java.util.Set;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -44,10 +46,18 @@ public class PlayerStatManager {
     private double econBonusLevel;
     private double pointLoss;
     private double econBaseStolen;
+    private final int combatTagDuration;
+    private final boolean useLogoutPenalty;
+    private Map<Player, Long> damageMap = new HashMap<Player, Long>();
+    private Map<Player, LivingEntity> whoDamagedMap = new HashMap<Player, LivingEntity>();
+    private final double percentPenalty;
     
     public PlayerStatManager(HeroScoreboard plugin, FileConfiguration config) {
         this.plugin = plugin;
         
+        percentPenalty = config.getInt("percent-health-penalty") / 100;
+        useLogoutPenalty = config.getBoolean("use-logout-penalty");
+        combatTagDuration = config.getInt("combat-tag-duration");
         ignoredSkills = (List<String>) config.getStringList("ignored-skills");
         levelRange = config.getInt("level-range");
         killCooldown = config.getInt("repeat-kill-cooldown") * 1000;
@@ -130,6 +140,34 @@ public class PlayerStatManager {
             tempMap.put(args[0], Integer.parseInt(args[1]));
         }
         return tempMap;
+    }
+    
+    public double getPercentHealthPenalty() {
+        return percentPenalty;
+    }
+    
+    public void setWhoDamaged(Player p, LivingEntity le) {
+        whoDamagedMap.put(p, le);
+    }
+    
+    public LivingEntity getWhoDamaged(Player p) {
+        return whoDamagedMap.get(p);
+    }
+    
+    public void putDamagedPlayer(Player p) {
+        damageMap.put(p, System.currentTimeMillis());
+    }
+    
+    public long getLoggingPlayer(Player p) {
+        return damageMap.get(p);
+    }
+    
+    public boolean getUseCombatTag() {
+        return useLogoutPenalty;
+    }
+    
+    public int getCombatTagDuration() {
+        return combatTagDuration;
     }
     
     public PlayerStats getPlayerStats(String name) {

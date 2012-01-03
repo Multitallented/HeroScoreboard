@@ -12,6 +12,7 @@ import net.milkbowl.vault.economy.Economy;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -36,8 +37,13 @@ public class PvPListener extends EntityListener {
     
     @Override
     public void onEntityDamage(EntityDamageEvent event) {
-        if (event.isCancelled() || !(event.getEntity() instanceof Player) || !(event instanceof EntityDamageByEntityEvent) || event.getDamage() == 0 ||
-                (HeroScoreboard.heroes != null && event.getDamage() < HeroScoreboard.heroes.getHeroManager().getHero((Player) event.getEntity()).getHealth()) ||
+        if (event.isCancelled() || !(event.getEntity() instanceof Player) || !(event instanceof EntityDamageByEntityEvent) || event.getDamage() == 0)
+            return;
+        
+        Player player = (Player) event.getEntity();
+        psm.putDamagedPlayer(player);
+        
+        if ((HeroScoreboard.heroes != null && event.getDamage() < HeroScoreboard.heroes.getHeroManager().getHero((Player) event.getEntity()).getHealth()) ||
                 (HeroScoreboard.heroes == null && ((Player) event.getEntity()).getHealth() > event.getDamage()))
             return;
         EntityDamageByEntityEvent edBy = (EntityDamageByEntityEvent) event;
@@ -45,10 +51,12 @@ public class PvPListener extends EntityListener {
         if (event.getCause() == DamageCause.PROJECTILE) {
             damager = ((Projectile)damager).getShooter();
         }
+        if (damager instanceof LivingEntity) {
+            psm.setWhoDamaged(player, (LivingEntity) damager);
+        }
         if (!(damager instanceof Player)) {
             return;
         }
-        Player player = (Player) edBy.getEntity();
         Hero hero = null;
         if (HeroScoreboard.heroes != null)
             hero = HeroScoreboard.heroes.getHeroManager().getHero(player);
@@ -64,7 +72,7 @@ public class PvPListener extends EntityListener {
         
         lastKilled.put(player, new Date().getTime());
         //Check if level range too great
-        if (hero != null && dHero.getLevel() - hero.getLevel() > psm.getLevelRange()) {
+        if (hero != null && dHero.getTieredLevel(dHero.getHeroClass()) - hero.getTieredLevel(hero.getHeroClass()) > psm.getLevelRange()) {
             dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Level difference (" + (dHero.getLevel() - hero.getLevel()) + ") too large. No points given.");
             return;
         }

@@ -1,3 +1,6 @@
+use-logout-penalty: true
+combat-tag-duration: 20
+percent-health-penalty: 80
 ignored-skills:
   - Track
   - Scan
@@ -23,8 +26,8 @@ points:
     - GOLDEN_APPLE:5.0
   half-health-bonus: 0.0
   quarter-health-bonus: 1.0
-  bonus-per-killstreak: 0.2
-  bonus-per-killjoy: 0.1
+  bonus-per-killstreak: 1.0
+  bonus-per-killjoy: 0.5
   bonus-per-level: 0.05
   points-lost-on-death: 5.0
 economy:

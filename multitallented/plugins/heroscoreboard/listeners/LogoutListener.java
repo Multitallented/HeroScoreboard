@@ -25,12 +25,21 @@ public class LogoutListener extends PlayerListener {
             long lastDamage = psm.getLoggingPlayer(player);
             int combatTagDuration = psm.getCombatTagDuration();
             LivingEntity le = psm.getWhoDamaged(player);
-            if (lastDamage + combatTagDuration > System.currentTimeMillis() && !le.isDead()) {
+            if (lastDamage + combatTagDuration > System.currentTimeMillis() && (le == null || !le.isDead())) {
                 if (HeroScoreboard.heroes != null) {
                     Hero hero = HeroScoreboard.heroes.getHeroManager().getHero(player);
-                    player.damage((int) (hero.getMaxHealth() * psm.getPercentHealthPenalty()), le);
+                    if (le != null) {
+                        player.damage((int) (hero.getMaxHealth() * psm.getPercentHealthPenalty()), le);
+                    } else {
+                        player.damage((int) (hero.getMaxHealth() * psm.getPercentHealthPenalty()));
+                    }
+                    return;
                 }
-                player.damage((int) (20 * psm.getPercentHealthPenalty()), le);
+                if (le != null) {
+                    player.damage((int) (20 * psm.getPercentHealthPenalty()), le);
+                } else {
+                    player.damage((int) (20 * psm.getPercentHealthPenalty()));
+                }
             }
         } catch (NullPointerException npe) {
             

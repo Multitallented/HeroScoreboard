@@ -50,11 +50,18 @@ public class HeroScoreboard extends JavaPlugin {
         
         //Register the pvp listener
         PluginManager pm = this.getServer().getPluginManager();
-        pm.registerEvent(Type.ENTITY_DAMAGE, new PvPListener(this, playerStatManager), Priority.Monitor, this);
+        PvPListener pvp = new PvPListener(this, playerStatManager);
+        pm.registerEvent(Type.ENTITY_DAMAGE, pvp, Priority.Monitor, this);
+        pm.registerEvent(Type.ENTITY_DEATH, pvp, Priority.Monitor, this);
         pm.registerEvent(Type.CUSTOM_EVENT, new SkillListener(playerStatManager), Priority.Monitor, this);
         if (playerStatManager.getUseCombatTag()) {
-            pm.registerEvent(Type.PLAYER_QUIT, new LogoutListener(playerStatManager), Priority.Monitor, this);
+            pm.registerEvent(Type.PLAYER_QUIT, new LogoutListener(playerStatManager), Priority.High, this);
         }
+        
+        if (pm.isPluginEnabled("Heroes")) {
+            HeroScoreboard.heroes = (Heroes) pm.getPlugin("Heroes");
+        }
+        
         System.out.println("[HeroScoreboard] is now enabled!");
     }
     
@@ -147,6 +154,7 @@ public class HeroScoreboard extends JavaPlugin {
                         " D:" + ChatColor.RED + ps.getDeaths() + ChatColor.GRAY
                         + " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format(ps.getKills() / (ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY + 
                         " pts:" + ChatColor.RED + ((int) ps.getPoints()));
+                sender.sendMessage(ChatColor.GRAY + "streak: " + ChatColor.RED + ps.getKillstreak() + ChatColor.GRAY + ", Highest Killstreak: " + ChatColor.RED + ps.getHighestKillstreak());
             }
             return true;
         }
@@ -154,13 +162,6 @@ public class HeroScoreboard extends JavaPlugin {
         sender.sendMessage(ChatColor.GRAY + "1. /heroscore list <pagenumber> (shows a list of the top players)");
         sender.sendMessage(ChatColor.GRAY + "2. /heroscore who <playername> (Shows stats of that playername)");
         return true;
-    }
-    
-    public void disableHeroes() {
-        HeroScoreboard.heroes = null;
-    }
-    public void enableHeroes(Heroes heroes) {
-        HeroScoreboard.heroes = heroes;
     }
     public boolean setupEconomy() {
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);

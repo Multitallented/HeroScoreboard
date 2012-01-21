@@ -26,7 +26,7 @@ public class PluginListener extends ServerListener {
 
         if (name.equals("Heroes")) {
             System.out.println("[HeroScoreboard] " + name + " has been disabled! No longer hooking into Heroes.");
-            plugin.disableHeroes();
+            HeroScoreboard.heroes = null;
         }
         /*else if (name.equals("iConomy") || name.equals("BOSEconomy") || name.equals("Essentials")) {
             System.out.println("[HeroScoreboard] is no longer hooked into " + name);
@@ -38,10 +38,9 @@ public class PluginListener extends ServerListener {
     public void onPluginEnable(PluginEnableEvent event) {
         Plugin currentPlugin = event.getPlugin();
         String name = currentPlugin.getDescription().getName();
-        PluginManager pm = this.plugin.getServer().getPluginManager();
         
         if (name.equals("Heroes")) {
-            plugin.enableHeroes((Heroes) currentPlugin);
+            HeroScoreboard.heroes = (Heroes) currentPlugin;
         }
         /*else if (name.equals("Vault") && (pm.isPluginEnabled("iConomy") || pm.isPluginEnabled("BOSEconomy") || pm.isPluginEnabled("Essentials"))
                 && HeroScoreboard.econ == null) {

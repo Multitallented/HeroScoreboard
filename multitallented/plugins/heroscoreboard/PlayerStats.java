@@ -16,6 +16,15 @@ public class PlayerStats {
     private Map<String, Integer> skills = new HashMap<String, Integer>();
     private double points = 0;
     private int killstreak = 0;
+    private int highestKillstreak = 0;
+    
+    public void setHighestKillstreak(int highestKillstreak) {
+        this.highestKillstreak = highestKillstreak;
+    }
+    
+    public int getHighestKillstreak() {
+        return highestKillstreak;
+    }
     
     public int getKills() {
         return kills;

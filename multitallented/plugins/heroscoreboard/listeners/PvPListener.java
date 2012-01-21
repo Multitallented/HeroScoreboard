@@ -18,6 +18,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityListener;
 import org.bukkit.inventory.ItemStack;
 
@@ -36,16 +37,39 @@ public class PvPListener extends EntityListener {
     }
     
     @Override
-    public void onEntityDamage(EntityDamageEvent event) {
-        if (event.isCancelled() || !(event.getEntity() instanceof Player) || !(event instanceof EntityDamageByEntityEvent) || event.getDamage() == 0)
+    public void onEntityDamage(EntityDamageEvent e) {
+        if (e.isCancelled() || !(e.getEntity() instanceof Player) || !(e instanceof EntityDamageByEntityEvent) || e.getDamage() < 1) {
             return;
+        }
+        Player player = (Player) e.getEntity();
+        psm.putDamagedPlayer(player);
+        
+        EntityDamageByEntityEvent edBy = (EntityDamageByEntityEvent) e;
+        Entity damager = edBy.getDamager(); 
+        if (e.getCause() == DamageCause.PROJECTILE) {
+            damager = ((Projectile)damager).getShooter();
+        }
+        if (damager instanceof LivingEntity) {
+            psm.setWhoDamaged(player, (LivingEntity) damager);
+        }
+    }
+    
+    @Override
+    public void onEntityDeath(EntityDeathEvent e) {
+        if (!(e.getEntity() instanceof Player)) {
+            return;
+        }
+        EntityDamageEvent event = e.getEntity().getLastDamageCause();
+        if (!(event instanceof EntityDamageByEntityEvent)) {
+            return;
+        }
         
         Player player = (Player) event.getEntity();
-        psm.putDamagedPlayer(player);
         
         if ((HeroScoreboard.heroes != null && event.getDamage() < HeroScoreboard.heroes.getHeroManager().getHero((Player) event.getEntity()).getHealth()) ||
                 (HeroScoreboard.heroes == null && ((Player) event.getEntity()).getHealth() > event.getDamage()))
             return;
+        
         EntityDamageByEntityEvent edBy = (EntityDamageByEntityEvent) event;
         Entity damager = edBy.getDamager(); 
         if (event.getCause() == DamageCause.PROJECTILE) {
@@ -58,14 +82,16 @@ public class PvPListener extends EntityListener {
             return;
         }
         Hero hero = null;
-        if (HeroScoreboard.heroes != null)
+        if (HeroScoreboard.heroes != null) {
             hero = HeroScoreboard.heroes.getHeroManager().getHero(player);
+        }
         final Player dPlayer = (Player) damager;
         if (!HeroScoreboard.permission.has(player.getWorld().getName(), dPlayer.getName(), "heroscoreboard.participate"))
             return;
         Hero dHero = null;
-        if (hero != null)
+        if (hero != null) {
             dHero = HeroScoreboard.heroes.getHeroManager().getHero(dPlayer);
+        }
         //Check if repeat kill
         if (lastKilled.containsKey(player) && (new Date()).getTime() - lastKilled.get(player) < psm.getRepeatKillCooldown())
             return;

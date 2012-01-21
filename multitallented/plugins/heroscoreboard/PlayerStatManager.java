@@ -50,14 +50,15 @@ public class PlayerStatManager {
     private final boolean useLogoutPenalty;
     private Map<Player, Long> damageMap = new HashMap<Player, Long>();
     private Map<Player, LivingEntity> whoDamagedMap = new HashMap<Player, LivingEntity>();
-    private final double percentPenalty;
+    private double percentPenalty;
     
     public PlayerStatManager(HeroScoreboard plugin, FileConfiguration config) {
         this.plugin = plugin;
         
-        percentPenalty = config.getInt("percent-health-penalty") / 100;
+        percentPenalty = config.getInt("percent-health-penalty");
+        percentPenalty = percentPenalty / 100;
         useLogoutPenalty = config.getBoolean("use-logout-penalty");
-        combatTagDuration = config.getInt("combat-tag-duration");
+        combatTagDuration = config.getInt("combat-tag-duration") * 1000;
         ignoredSkills = (List<String>) config.getStringList("ignored-skills");
         levelRange = config.getInt("level-range");
         killCooldown = config.getInt("repeat-kill-cooldown") * 1000;
@@ -101,6 +102,7 @@ public class PlayerStatManager {
                 ps.setKills(dataConfig.getInt("kills"));
                 ps.setPoints(dataConfig.getDouble("points"));
                 ps.setKillstreak(dataConfig.getInt("killstreak"));
+                ps.setHighestKillstreak(dataConfig.getInt("highest-killstreak"));
                 playerStats.put(dataFile.getName().replace(".yml", ""), ps);
             } catch (Exception e) {
                 System.out.println("[HeroScoreboard] failed to load data from " + dataFile.getName());
@@ -137,6 +139,7 @@ public class PlayerStatManager {
             return tempMap;
         for (String s : list) {
             String[] args = s.split(":");
+            //TODO fix this NPE
             tempMap.put(args[0], Integer.parseInt(args[1]));
         }
         return tempMap;
@@ -202,6 +205,7 @@ public class PlayerStatManager {
         dataConfig.set("weapons", ps.getWeapon());
         dataConfig.set("skills", ps.getSkill());
         dataConfig.set("nemeses", ps.getNemesis());
+        dataConfig.set("highest-killstreak", ps.getHighestKillstreak());
         try {
             dataConfig.save(dataFile);
         } catch (IOException ex) {

@@ -5,20 +5,21 @@ import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import multitallented.plugins.heroscoreboard.PlayerStatManager;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerListener;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 /**
  *
  * @author Multitallented
  */
-public class LogoutListener extends PlayerListener {
+public class LogoutListener implements Listener {
     private final PlayerStatManager psm;
     public LogoutListener(PlayerStatManager psm) {
         this.psm = psm;
     }
     
-    @Override
+    @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         try {

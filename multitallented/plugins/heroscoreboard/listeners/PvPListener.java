@@ -1,5 +1,6 @@
 package multitallented.plugins.heroscoreboard.listeners;
 
+import com.herocraftonline.dev.heroes.classes.HeroClass.ExperienceType;
 import com.herocraftonline.dev.heroes.hero.Hero;
 import java.util.Date;
 import java.util.EnumMap;
@@ -15,18 +16,19 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityListener;
 import org.bukkit.inventory.ItemStack;
 
 /**
  *
  * @author Multitallented
  */
-public class PvPListener extends EntityListener {
+public class PvPListener implements Listener {
     private final HeroScoreboard plugin;
     private final PlayerStatManager psm;
     private final Map<Player, Long> lastKilled = new HashMap<Player, Long>();
@@ -36,13 +38,18 @@ public class PvPListener extends EntityListener {
         this.psm = psm;
     }
     
-    @Override
+    @EventHandler
     public void onEntityDamage(EntityDamageEvent e) {
-        if (e.isCancelled() || !(e.getEntity() instanceof Player) || !(e instanceof EntityDamageByEntityEvent) || e.getDamage() < 1) {
+        if (e.isCancelled() || !(e.getEntity() instanceof Player) || e.getDamage() < 1) {
             return;
         }
         Player player = (Player) e.getEntity();
         psm.putDamagedPlayer(player);
+        
+        if (!(e instanceof EntityDamageByEntityEvent)) {
+            psm.setWhoDamaged(player, null);
+            return;
+        }
         
         EntityDamageByEntityEvent edBy = (EntityDamageByEntityEvent) e;
         Entity damager = edBy.getDamager(); 
@@ -51,10 +58,12 @@ public class PvPListener extends EntityListener {
         }
         if (damager instanceof LivingEntity) {
             psm.setWhoDamaged(player, (LivingEntity) damager);
+        } else {
+            psm.setWhoDamaged(player, null);
         }
     }
     
-    @Override
+    @EventHandler
     public void onEntityDeath(EntityDeathEvent e) {
         if (!(e.getEntity() instanceof Player)) {
             return;
@@ -93,13 +102,24 @@ public class PvPListener extends EntityListener {
             dHero = HeroScoreboard.heroes.getHeroManager().getHero(dPlayer);
         }
         //Check if repeat kill
-        if (lastKilled.containsKey(player) && (new Date()).getTime() - lastKilled.get(player) < psm.getRepeatKillCooldown())
+        if (lastKilled.containsKey(player) && (new Date()).getTime() - lastKilled.get(player) < psm.getRepeatKillCooldown()) {
+            if (hero != null) {
+                if (dHero.getHeroClass().hasExperiencetype(ExperienceType.PVP)) {
+                    dHero.setExperience(hero.getHeroClass(), dHero.getExperience(dHero.getHeroClass()) - 
+                            dHero.getHeroClass().getExpModifier()*HeroScoreboard.heroes.properties.playerKillingExp);
+                }
+            }
             return;
+        }
         
         lastKilled.put(player, new Date().getTime());
         //Check if level range too great
         if (hero != null && dHero.getTieredLevel(dHero.getHeroClass()) - hero.getTieredLevel(hero.getHeroClass()) > psm.getLevelRange()) {
             dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Level difference (" + (dHero.getLevel() - hero.getLevel()) + ") too large. No points given.");
+            if (dHero.getHeroClass().hasExperiencetype(ExperienceType.PVP)) {
+                dHero.setExperience(dHero.getHeroClass(), dHero.getExperience(dHero.getHeroClass()) - 
+                        dHero.getHeroClass().getExpModifier()*HeroScoreboard.heroes.properties.playerKillingExp);
+            }
             return;
         }
         
@@ -161,6 +181,9 @@ public class PvPListener extends EntityListener {
         if (psv.getKillstreak() >= 3) {
             plugin.getServer().broadcastMessage(ChatColor.GRAY + "[HeroScoreboard] " + dPlayer.getDisplayName() + " just ended "
                     + player.getDisplayName() + "'s killstreak of " + ChatColor.RED + psv.getKillstreak());
+        }
+        if (ps.getHighestKillstreak() < ps.getKillstreak()) {
+            ps.setHighestKillstreak(ps.getKillstreak());
         }
         
         double points = psm.getPointBase();

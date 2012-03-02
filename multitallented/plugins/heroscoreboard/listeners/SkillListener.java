@@ -4,20 +4,21 @@ import com.herocraftonline.dev.heroes.api.SkillUseEvent;
 import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import multitallented.plugins.heroscoreboard.PlayerStatManager;
 import org.bukkit.entity.Player;
-import org.bukkit.event.CustomEventListener;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 
 /**
  *
  * @author Multitallented
  */
-public class SkillListener extends CustomEventListener {
+public class SkillListener implements Listener {
     private final PlayerStatManager psm;
     public SkillListener(PlayerStatManager psm) {
         this.psm = psm;
     }
     
-    @Override
+    @EventHandler
     public void onCustomEvent(Event event) {
         if (HeroScoreboard.heroes == null || !(event instanceof SkillUseEvent))
             return;

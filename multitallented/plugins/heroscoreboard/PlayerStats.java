@@ -107,7 +107,21 @@ public class PlayerStats {
     public ArrayList<String> getSkills() {
         ArrayList<String> tempArray = new ArrayList<String>();
         for (String s : skills.keySet()) {
-            tempArray.add(s + ":" + skills.get(s));
+            tempArray.add(s + "," + skills.get(s));
+        }
+        return tempArray;
+    }
+    public ArrayList<String> getNemeses() {
+        ArrayList<String> tempArray = new ArrayList<String>();
+        for (String s : nemeses.keySet()) {
+            tempArray.add(s + "," + nemeses.get(s));
+        }
+        return tempArray;
+    }
+    public ArrayList<String> getWeapons() {
+        ArrayList<String> tempArray = new ArrayList<String>();
+        for (String s : weapons.keySet()) {
+            tempArray.add(s + "," + weapons.get(s));
         }
         return tempArray;
     }

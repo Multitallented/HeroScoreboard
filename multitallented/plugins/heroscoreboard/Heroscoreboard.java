@@ -15,8 +15,6 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event.Priority;
-import org.bukkit.event.Event.Type;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -51,11 +49,10 @@ public class HeroScoreboard extends JavaPlugin {
         //Register the pvp listener
         PluginManager pm = this.getServer().getPluginManager();
         PvPListener pvp = new PvPListener(this, playerStatManager);
-        pm.registerEvent(Type.ENTITY_DAMAGE, pvp, Priority.Monitor, this);
-        pm.registerEvent(Type.ENTITY_DEATH, pvp, Priority.Monitor, this);
-        pm.registerEvent(Type.CUSTOM_EVENT, new SkillListener(playerStatManager), Priority.Monitor, this);
+        pm.registerEvents(pvp, this);
+        pm.registerEvents(new SkillListener(playerStatManager), this);
         if (playerStatManager.getUseCombatTag()) {
-            pm.registerEvent(Type.PLAYER_QUIT, new LogoutListener(playerStatManager), Priority.High, this);
+            pm.registerEvents(new LogoutListener(playerStatManager), this);
         }
         
         if (pm.isPluginEnabled("Heroes")) {
@@ -75,7 +72,7 @@ public class HeroScoreboard extends JavaPlugin {
                     String message = ChatColor.GRAY + "[HeroScoreboard] " + p.getName();
                     message += " K:" + ChatColor.RED + ps.getKills() + ChatColor.GRAY;
                     message += " D:" + ChatColor.RED + ps.getDeaths() + ChatColor.GRAY;
-                    message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format(ps.getKills() / (ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;
+                    message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format((double) ps.getKills() / (double) (ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;
                     message += " pts:" + ChatColor.RED + (int) ps.getPoints() + ChatColor.GRAY;
                     message += " weapon:" + ChatColor.RED + ps.getWeapon() + ChatColor.GRAY;
                     message += " skill:" + ChatColor.RED + ps.getSkill() + ChatColor.GRAY;
@@ -91,7 +88,7 @@ public class HeroScoreboard extends JavaPlugin {
                     String message = ChatColor.GRAY + "[HeroScoreboard] " + op.getName();
                     message += " K:" + ChatColor.RED + ps.getKills() + ChatColor.GRAY;
                     message += " D:" + ChatColor.RED + ps.getDeaths() + ChatColor.GRAY;
-                    message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format(ps.getKills() / (ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;
+                    message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format((double) ps.getKills() / ((double) ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;
                     message += " pts:" + ChatColor.RED + (int) ps.getPoints() + ChatColor.GRAY;
                     message += " weapon:" + ChatColor.RED + ps.getWeapon() + ChatColor.GRAY;
                     message += " skill:" + ChatColor.RED + ps.getSkill() + ChatColor.GRAY;
@@ -152,7 +149,7 @@ public class HeroScoreboard extends JavaPlugin {
                 PlayerStats ps = topPlayers.get(i);
                 sender.sendMessage(ChatColor.GRAY + "" + (i+1) + ". " + ChatColor.RED + players.get(i) + ChatColor.GRAY + " K:" + ChatColor.RED + ps.getKills() + ChatColor.GRAY +
                         " D:" + ChatColor.RED + ps.getDeaths() + ChatColor.GRAY
-                        + " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format(ps.getKills() / (ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY + 
+                        + " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format((double) ps.getKills() / ((double) ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY + 
                         " pts:" + ChatColor.RED + ((int) ps.getPoints()));
                 sender.sendMessage(ChatColor.GRAY + "streak: " + ChatColor.RED + ps.getKillstreak() + ChatColor.GRAY + ", Highest Killstreak: " + ChatColor.RED + ps.getHighestKillstreak());
             }

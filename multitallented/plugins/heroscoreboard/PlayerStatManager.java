@@ -116,8 +116,13 @@ public class PlayerStatManager {
         if (list == null)
             return tempArray;
         for (String s : list) {
-            String[] params = s.split(":");
-            tempArray.add(new ItemStack(Material.getMaterial(params[0]), Integer.parseInt(params[1])));
+            try {
+                String[] params = s.split(",");
+                tempArray.add(new ItemStack(Material.getMaterial(params[0]), Integer.parseInt(params[1])));
+
+            } catch (Exception e) {
+
+            }
         }
         return tempArray;
     }
@@ -127,8 +132,12 @@ public class PlayerStatManager {
         if (list == null)
             return tempMap;
         for (String s : list) {
-            String[] params = s.split(":");
-            tempMap.put(Material.getMaterial(params[0]), Double.parseDouble(params[1]));
+            try {
+                String[] params = s.split(",");
+                tempMap.put(Material.getMaterial(params[0]), Double.parseDouble(params[1]));
+            } catch (Exception e) {
+                
+            }
         }
         return tempMap;
     }
@@ -138,9 +147,13 @@ public class PlayerStatManager {
         if (list == null)
             return tempMap;
         for (String s : list) {
-            String[] args = s.split(":");
-            //TODO fix this NPE
-            tempMap.put(args[0], Integer.parseInt(args[1]));
+            try {
+                String[] args = s.split(",");
+                //TODO fix this NPE
+                tempMap.put(args[0], Integer.parseInt(args[1]));
+            } catch (Exception e) {
+                //:P
+            }
         }
         return tempMap;
     }
@@ -202,9 +215,9 @@ public class PlayerStatManager {
         dataConfig.set("deaths", ps.getDeaths());
         dataConfig.set("killstreak", ps.getKillstreak());
         dataConfig.set("points", ps.getPoints());
-        dataConfig.set("weapons", ps.getWeapon());
-        dataConfig.set("skills", ps.getSkill());
-        dataConfig.set("nemeses", ps.getNemesis());
+        dataConfig.set("weapons", ps.getWeapons());
+        dataConfig.set("skills", ps.getSkills());
+        dataConfig.set("nemeses", ps.getNemeses());
         dataConfig.set("highest-killstreak", ps.getHighestKillstreak());
         try {
             dataConfig.save(dataFile);

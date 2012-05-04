@@ -1,7 +1,7 @@
 package multitallented.plugins.heroscoreboard;
 
 import multitallented.plugins.heroscoreboard.listeners.PvPListener;
-import com.herocraftonline.dev.heroes.Heroes;
+import com.herocraftonline.heroes.Heroes;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;

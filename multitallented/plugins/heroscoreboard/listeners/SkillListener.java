@@ -1,10 +1,9 @@
 package multitallented.plugins.heroscoreboard.listeners;
 
-import com.herocraftonline.dev.heroes.api.SkillUseEvent;
+import com.herocraftonline.heroes.api.events.SkillUseEvent;
 import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import multitallented.plugins.heroscoreboard.PlayerStatManager;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -19,15 +18,15 @@ public class SkillListener implements Listener {
     }
     
     @EventHandler
-    public void onCustomEvent(Event event) {
-        if (HeroScoreboard.heroes == null || !(event instanceof SkillUseEvent))
+    public void onCustomEvent(SkillUseEvent event) {
+        if (HeroScoreboard.heroes == null) {
+            return;
+        }
+        
+        if (event.isCancelled() || psm.containsIgnoredSkill(event.getSkill().getName()))
             return;
         
-        SkillUseEvent sue = (SkillUseEvent) event;
-        if (sue.isCancelled() || psm.containsIgnoredSkill(sue.getSkill().getName()))
-            return;
-        
-        Player player = sue.getPlayer();
-        psm.addSkill(player.getName(), sue.getSkill().getName());
+        Player player = event.getPlayer();
+        psm.addSkill(player.getName(), event.getSkill().getName());
     }
 }

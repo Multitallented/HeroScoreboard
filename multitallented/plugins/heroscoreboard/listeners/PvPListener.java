@@ -1,7 +1,7 @@
 package multitallented.plugins.heroscoreboard.listeners;
 
-import com.herocraftonline.dev.heroes.classes.HeroClass.ExperienceType;
-import com.herocraftonline.dev.heroes.hero.Hero;
+import com.herocraftonline.heroes.characters.Hero;
+import com.herocraftonline.heroes.characters.classes.HeroClass.ExperienceType;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -44,10 +44,8 @@ public class PvPListener implements Listener {
             return;
         }
         Player player = (Player) e.getEntity();
-        psm.putDamagedPlayer(player);
         
         if (!(e instanceof EntityDamageByEntityEvent)) {
-            psm.setWhoDamaged(player, null);
             return;
         }
         
@@ -57,9 +55,8 @@ public class PvPListener implements Listener {
             damager = ((Projectile)damager).getShooter();
         }
         if (damager instanceof LivingEntity) {
+            psm.putDamagedPlayer(player);
             psm.setWhoDamaged(player, (LivingEntity) damager);
-        } else {
-            psm.setWhoDamaged(player, null);
         }
     }
     
@@ -75,7 +72,7 @@ public class PvPListener implements Listener {
         
         Player player = (Player) event.getEntity();
         
-        if ((HeroScoreboard.heroes != null && event.getDamage() < HeroScoreboard.heroes.getHeroManager().getHero((Player) event.getEntity()).getHealth()) ||
+        if ((HeroScoreboard.heroes != null && event.getDamage() < HeroScoreboard.heroes.getCharacterManager().getHero((Player) event.getEntity()).getHealth()) ||
                 (HeroScoreboard.heroes == null && ((Player) event.getEntity()).getHealth() > event.getDamage()))
             return;
         
@@ -92,14 +89,15 @@ public class PvPListener implements Listener {
         }
         Hero hero = null;
         if (HeroScoreboard.heroes != null) {
-            hero = HeroScoreboard.heroes.getHeroManager().getHero(player);
+            hero = HeroScoreboard.heroes.getCharacterManager().getHero(player);
         }
         final Player dPlayer = (Player) damager;
-        if (!HeroScoreboard.permission.has(player.getWorld().getName(), dPlayer.getName(), "heroscoreboard.participate"))
+        if (!HeroScoreboard.permission.has(player.getWorld().getName(), dPlayer.getName(), "heroscoreboard.participate")) {
             return;
+        }
         Hero dHero = null;
         if (hero != null) {
-            dHero = HeroScoreboard.heroes.getHeroManager().getHero(dPlayer);
+            dHero = HeroScoreboard.heroes.getCharacterManager().getHero(dPlayer);
         }
         //Check if repeat kill
         if (lastKilled.containsKey(player) && (new Date()).getTime() - lastKilled.get(player) < psm.getRepeatKillCooldown()) {

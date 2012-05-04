@@ -1,6 +1,6 @@
 package multitallented.plugins.heroscoreboard.listeners;
 
-import com.herocraftonline.dev.heroes.hero.Hero;
+import com.herocraftonline.heroes.characters.Hero;
 import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import multitallented.plugins.heroscoreboard.PlayerStatManager;
 import org.bukkit.entity.LivingEntity;
@@ -28,7 +28,7 @@ public class LogoutListener implements Listener {
             LivingEntity le = psm.getWhoDamaged(player);
             if (lastDamage + combatTagDuration > System.currentTimeMillis() && (le == null || !le.isDead())) {
                 if (HeroScoreboard.heroes != null) {
-                    Hero hero = HeroScoreboard.heroes.getHeroManager().getHero(player);
+                    Hero hero = HeroScoreboard.heroes.getCharacterManager().getHero(player);
                     if (le != null) {
                         player.damage((int) (hero.getMaxHealth() * psm.getPercentHealthPenalty()), le);
                     } else {

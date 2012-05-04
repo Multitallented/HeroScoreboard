@@ -1,6 +1,6 @@
 package multitallented.plugins.heroscoreboard.listeners;
 
-import com.herocraftonline.dev.heroes.Heroes;
+import com.herocraftonline.heroes.Heroes;
 import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

@@ -14,6 +14,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -160,7 +161,7 @@ public class HeroScoreboard extends JavaPlugin {
         sender.sendMessage(ChatColor.GRAY + "2. /heroscore who <playername> (Shows stats of that playername)");
         return true;
     }
-    public boolean setupEconomy() {
+    private boolean setupEconomy() {
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
         if (rsp != null) {
             econ = rsp.getProvider();
@@ -169,7 +170,7 @@ public class HeroScoreboard extends JavaPlugin {
         }
         return econ != null;
     }
-    private Boolean setupPermissions()
+    private boolean setupPermissions()
     {
         RegisteredServiceProvider<Permission> permissionProvider = getServer().getServicesManager().getRegistration(net.milkbowl.vault.permission.Permission.class);
         if (permissionProvider != null) {
@@ -179,4 +180,13 @@ public class HeroScoreboard extends JavaPlugin {
         }
         return (permission != null);
     }
+    public boolean isPlayerInCombat(Player player) {
+        long lastDamage = playerStatManager.getLoggingPlayer(player);
+        int combatTagDuration = playerStatManager.getCombatTagDuration();
+        LivingEntity le = playerStatManager.getWhoDamaged(player);
+        if (lastDamage + combatTagDuration > System.currentTimeMillis() && (le == null || !le.isDead())) {
+            return true;
+        }
+        return false;
+    } 
 }

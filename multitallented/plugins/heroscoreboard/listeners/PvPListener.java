@@ -72,10 +72,6 @@ public class PvPListener implements Listener {
         
         Player player = (Player) event.getEntity();
         
-        if ((HeroScoreboard.heroes != null && event.getDamage() < HeroScoreboard.heroes.getCharacterManager().getHero((Player) event.getEntity()).getHealth()) ||
-                (HeroScoreboard.heroes == null && ((Player) event.getEntity()).getHealth() > event.getDamage()))
-            return;
-        
         EntityDamageByEntityEvent edBy = (EntityDamageByEntityEvent) event;
         Entity damager = edBy.getDamager(); 
         if (event.getCause() == DamageCause.PROJECTILE) {
@@ -112,14 +108,14 @@ public class PvPListener implements Listener {
         
         lastKilled.put(player, new Date().getTime());
         //Check if level range too great
-        if (hero != null && dHero.getTieredLevel(dHero.getHeroClass()) - hero.getTieredLevel(hero.getHeroClass()) > psm.getLevelRange()) {
+        /*if (hero != null && dHero.getTieredLevel(dHero.getHeroClass()) - hero.getTieredLevel(hero.getHeroClass()) > psm.getLevelRange()) {
             dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Level difference (" + (dHero.getLevel() - hero.getLevel()) + ") too large. No points given.");
             if (dHero.getHeroClass().hasExperiencetype(ExperienceType.PVP)) {
                 dHero.setExperience(dHero.getHeroClass(), dHero.getExperience(dHero.getHeroClass()) - 
                         dHero.getHeroClass().getExpModifier()*HeroScoreboard.heroes.properties.playerKillingExp);
             }
             return;
-        }
+        }*/
         
         //Drop any items in the PvPDrops list
         for (ItemStack is : psm.getPVPDrops()) {
@@ -163,7 +159,6 @@ public class PvPListener implements Listener {
         if (psv == null) {
             psv = new PlayerStats();
         }
-        psv.setDeaths(psv.getDeaths()+1);
         
         ps.addWeapon(dPlayer.getItemInHand().getType().name().replace("_", " ").toLowerCase());
         ps.addNemesis(player.getDisplayName());
@@ -199,11 +194,11 @@ public class PvPListener implements Listener {
         
         double healthBonus = 0;
         if ((dHero == null && dPlayer.getHealth() <= 5)
-                || (dHero != null && dHero.getHealth() <= dHero.getMaxHealth() / 4)) {
+                || (dHero != null && dPlayer.getHealth() <= dPlayer.getMaxHealth() / 4)) {
             healthBonus += psm.getPointQuarterHealth() + psm.getPointHalfHealth();
             econBonus += psm.getEconHalfHealth() + psm.getEconQuarterHealth();
         } else if ((dHero == null && dPlayer.getHealth() <= 10)
-                || (dHero != null && dHero.getHealth() <= dHero.getMaxHealth() / 2)) {
+                || (dHero != null && dPlayer.getHealth() <= dPlayer.getMaxHealth() / 2)) {
             healthBonus += psm.getPointHalfHealth();
             econBonus += psm.getEconHalfHealth();
         }

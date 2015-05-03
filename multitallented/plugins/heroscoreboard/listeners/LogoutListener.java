@@ -1,6 +1,5 @@
 package multitallented.plugins.heroscoreboard.listeners;
 
-import com.herocraftonline.heroes.characters.Hero;
 import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import multitallented.plugins.heroscoreboard.PlayerStatManager;
 import org.bukkit.entity.LivingEntity;

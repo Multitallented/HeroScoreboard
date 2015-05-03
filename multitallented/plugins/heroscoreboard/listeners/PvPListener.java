@@ -1,10 +1,9 @@
 package multitallented.plugins.heroscoreboard.listeners;
 
-import com.herocraftonline.heroes.characters.Hero;
-import com.herocraftonline.heroes.characters.classes.HeroClass.ExperienceType;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import multitallented.plugins.heroscoreboard.PlayerStatManager;
@@ -22,6 +21,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -32,6 +32,7 @@ public class PvPListener implements Listener {
     private final HeroScoreboard plugin;
     private final PlayerStatManager psm;
     private final Map<Player, Long> lastKilled = new HashMap<Player, Long>();
+    private final HashMap<String, HashSet<ItemStack>> itemsOnDeath = new HashMap<String, HashSet<ItemStack>>();
 
     public PvPListener(HeroScoreboard aThis, PlayerStatManager psm) {
         this.plugin=aThis;
@@ -61,16 +62,59 @@ public class PvPListener implements Listener {
     }
     
     @EventHandler
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        if (itemsOnDeath.containsKey(player.getName())) {
+            for (ItemStack is : itemsOnDeath.get(player.getName())) {
+                player.getInventory().addItem(is);
+            }
+            itemsOnDeath.remove(player.getName());    
+        }
+    }
+    
+    @EventHandler
     public void onEntityDeath(EntityDeathEvent e) {
         if (!(e.getEntity() instanceof Player)) {
             return;
         }
+        
+        Player player = (Player) e.getEntity();
+        
+        //Items on Death
+        if (psm.getKeepItemsOnDeath()) {
+            HashSet<ItemStack> deathItems = new HashSet<ItemStack>();
+            if (player.getItemInHand() != null && player.getItemInHand().getType() != Material.AIR) {
+                deathItems.add(player.getItemInHand());
+                player.getInventory().remove(player.getInventory().getHeldItemSlot());
+                e.getDrops().remove(player.getInventory().getHeldItemSlot());
+            }
+            if (player.getInventory().getHelmet() != null && player.getInventory().getHelmet().getType() != Material.AIR) {
+                deathItems.add(player.getInventory().getHelmet());
+                player.getInventory().remove(player.getInventory().getHelmet());
+                e.getDrops().remove(player.getInventory().getHelmet());
+            }
+            if (player.getInventory().getChestplate()!= null && player.getInventory().getChestplate().getType() != Material.AIR) {
+                deathItems.add(player.getInventory().getChestplate());
+                player.getInventory().remove(player.getInventory().getChestplate());
+                e.getDrops().remove(player.getInventory().getChestplate());
+            }
+            if (player.getInventory().getLeggings()!= null && player.getInventory().getLeggings().getType() != Material.AIR) {
+                deathItems.add(player.getInventory().getLeggings());
+                player.getInventory().remove(player.getInventory().getLeggings());
+                e.getDrops().remove(player.getInventory().getLeggings());
+            }
+            if (player.getInventory().getBoots()!= null && player.getInventory().getBoots().getType() != Material.AIR) {
+                deathItems.add(player.getInventory().getBoots());
+                player.getInventory().remove(player.getInventory().getBoots());
+                e.getDrops().remove(player.getInventory().getBoots());
+            }
+            itemsOnDeath.put(player.getName(), deathItems);
+        }
+        
         EntityDamageEvent event = e.getEntity().getLastDamageCause();
         if (!(event instanceof EntityDamageByEntityEvent)) {
             return;
         }
-        
-        Player player = (Player) event.getEntity();
         
         EntityDamageByEntityEvent edBy = (EntityDamageByEntityEvent) event;
         Entity damager = edBy.getDamager(); 
@@ -83,26 +127,15 @@ public class PvPListener implements Listener {
         if (!(damager instanceof Player)) {
             return;
         }
-        Hero hero = null;
-        if (HeroScoreboard.heroes != null) {
-            hero = HeroScoreboard.heroes.getCharacterManager().getHero(player);
-        }
+        
         final Player dPlayer = (Player) damager;
         if (!HeroScoreboard.permission.has(player.getWorld().getName(), dPlayer.getName(), "heroscoreboard.participate")) {
             return;
         }
-        Hero dHero = null;
-        if (hero != null) {
-            dHero = HeroScoreboard.heroes.getCharacterManager().getHero(dPlayer);
-        }
+        
         //Check if repeat kill
         if (lastKilled.containsKey(player) && (new Date()).getTime() - lastKilled.get(player) < psm.getRepeatKillCooldown()) {
-            if (hero != null) {
-                if (dHero.getHeroClass().hasExperiencetype(ExperienceType.PVP)) {
-                    dHero.setExperience(hero.getHeroClass(), dHero.getExperience(dHero.getHeroClass()) - 
-                            dHero.getHeroClass().getExpModifier()*HeroScoreboard.heroes.properties.playerKillingExp);
-                }
-            }
+            //TODO add code here some time?
             return;
         }
         
@@ -193,26 +226,14 @@ public class PvPListener implements Listener {
         points += preTotalValuables;
         
         double healthBonus = 0;
-        if ((dHero == null && dPlayer.getHealth() <= 5)
-                || (dHero != null && dPlayer.getHealth() <= dPlayer.getMaxHealth() / 4)) {
-            healthBonus += psm.getPointQuarterHealth() + psm.getPointHalfHealth();
-            econBonus += psm.getEconHalfHealth() + psm.getEconQuarterHealth();
-        } else if ((dHero == null && dPlayer.getHealth() <= 10)
-                || (dHero != null && dPlayer.getHealth() <= dPlayer.getMaxHealth() / 2)) {
+        if (dPlayer.getHealth() <= 10) {
             healthBonus += psm.getPointHalfHealth();
             econBonus += psm.getEconHalfHealth();
         }
         points += healthBonus;
         
         double pointLevelBonus = 0;
-        if (hero != null) {
-            int levelDifference = hero.getLevel() - dHero.getLevel();
-            if (levelDifference > 0) {
-                pointLevelBonus = levelDifference * psm.getPointBonusLevel();
-                points += pointLevelBonus;
-                econBonus += levelDifference * psm.getEconBonusLevel();
-            }
-        }
+        
         //pay econ bonus
         if (econ != null)
             econ.bankDeposit(dPlayer.getName(), econBonus); 

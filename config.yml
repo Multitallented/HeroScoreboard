@@ -1,6 +1,7 @@
 use-logout-penalty: true
 combat-tag-duration: 20
 percent-health-penalty: 80
+keep-items-on-death: false
 ignored-skills:
   - Track
   - Scan

@@ -1,13 +1,11 @@
 package multitallented.plugins.heroscoreboard;
 
 import multitallented.plugins.heroscoreboard.listeners.PvPListener;
-import com.herocraftonline.heroes.Heroes;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import multitallented.plugins.heroscoreboard.listeners.LogoutListener;
 import multitallented.plugins.heroscoreboard.listeners.PluginListener;
-import multitallented.plugins.heroscoreboard.listeners.SkillListener;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.ChatColor;
@@ -22,7 +20,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class HeroScoreboard extends JavaPlugin {
     public static Economy econ = null;
-    public static Heroes heroes = null;
     protected FileConfiguration config;
     private PlayerStatManager playerStatManager;
     public static Permission permission = null;
@@ -35,7 +32,8 @@ public class HeroScoreboard extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        new PluginListener(this);
+        //renable this when you need to add plugin dependencies
+        //new PluginListener(this);
         
         //setup configs
         config = getConfig();
@@ -51,13 +49,8 @@ public class HeroScoreboard extends JavaPlugin {
         PluginManager pm = this.getServer().getPluginManager();
         PvPListener pvp = new PvPListener(this, playerStatManager);
         pm.registerEvents(pvp, this);
-        pm.registerEvents(new SkillListener(playerStatManager), this);
         if (playerStatManager.getUseCombatTag()) {
             pm.registerEvents(new LogoutListener(playerStatManager), this);
-        }
-        
-        if (pm.isPluginEnabled("Heroes")) {
-            HeroScoreboard.heroes = (Heroes) pm.getPlugin("Heroes");
         }
         
         System.out.println("[HeroScoreboard] is now enabled!");
@@ -182,8 +175,14 @@ public class HeroScoreboard extends JavaPlugin {
     }
     public boolean isPlayerInCombat(Player player) {
         long lastDamage = playerStatManager.getLoggingPlayer(player);
+        if (lastDamage == -1) {
+            return false;
+        }
         int combatTagDuration = playerStatManager.getCombatTagDuration();
         LivingEntity le = playerStatManager.getWhoDamaged(player);
+        if (le == null) {
+            return false;
+        }
         if (lastDamage + combatTagDuration > System.currentTimeMillis() && (le == null || !le.isDead())) {
             return true;
         }

@@ -46,6 +46,7 @@ public class PlayerStatManager {
     private Map<Player, Long> damageMap = new HashMap<Player, Long>();
     private Map<Player, LivingEntity> whoDamagedMap = new HashMap<Player, LivingEntity>();
     private double percentPenalty;
+    private boolean itemsOnDeath = false;
     
     public PlayerStatManager(HeroScoreboard plugin, FileConfiguration config) {
         this.plugin = plugin;
@@ -80,6 +81,7 @@ public class PlayerStatManager {
         econBonusKillStreak = config.getDouble("economy.bonus-per-killstreak");
         econBonusKillJoy = config.getDouble("economy.bonus-per-killjoy");
         econBonusLevel = config.getDouble("economy.bonus-per-level");
+        itemsOnDeath = config.getBoolean("keep-items-on-death", false);
         
         File playerFolder = new File(plugin.getDataFolder(), "data"); // Setup the Data Folder if it doesn't already exist
         playerFolder.mkdirs();
@@ -161,7 +163,14 @@ public class PlayerStatManager {
         whoDamagedMap.put(p, le);
     }
     
+    public boolean getKeepItemsOnDeath() {
+        return itemsOnDeath;
+    }
+    
     public LivingEntity getWhoDamaged(Player p) {
+        if (!whoDamagedMap.containsKey(p)) {
+            return null;
+        }
         return whoDamagedMap.get(p);
     }
     
@@ -170,6 +179,9 @@ public class PlayerStatManager {
     }
     
     public long getLoggingPlayer(Player p) {
+        if (!damageMap.containsKey(p)) {
+            return -1;
+        }
         return damageMap.get(p);
     }
     

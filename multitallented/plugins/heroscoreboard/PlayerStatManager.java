@@ -18,7 +18,6 @@ import org.bukkit.inventory.ItemStack;
 public class PlayerStatManager {
     private final HeroScoreboard plugin;
     private Map<String, PlayerStats> playerStats = new HashMap<String, PlayerStats>();
-    private List<String> ignoredSkills;
     private int levelRange;
     private long killCooldown;
     private List<ItemStack> pvpDrops;
@@ -55,7 +54,6 @@ public class PlayerStatManager {
         percentPenalty = percentPenalty / 100;
         useLogoutPenalty = config.getBoolean("use-logout-penalty");
         combatTagDuration = config.getInt("combat-tag-duration") * 1000;
-        ignoredSkills = (List<String>) config.getStringList("ignored-skills");
         levelRange = config.getInt("level-range");
         killCooldown = config.getInt("repeat-kill-cooldown") * 1000;
         pvpDrops = processItemStackList(config.getStringList("pvp-drops"));
@@ -93,7 +91,6 @@ public class PlayerStatManager {
                 dataConfig.load(dataFile);
                 PlayerStats ps = new PlayerStats();
                 ps.setNemesis(processListMap(dataConfig.getStringList("nemeses")));
-                ps.setSkill(processListMap(dataConfig.getStringList("skills")));
                 ps.setWeapon(processListMap(dataConfig.getStringList("weapons")));
                 ps.setDeaths(dataConfig.getInt("deaths"));
                 ps.setKills(dataConfig.getInt("kills"));
@@ -223,7 +220,6 @@ public class PlayerStatManager {
         dataConfig.set("killstreak", ps.getKillstreak());
         dataConfig.set("points", ps.getPoints());
         dataConfig.set("weapons", ps.getWeapons());
-        dataConfig.set("skills", ps.getSkills());
         dataConfig.set("nemeses", ps.getNemeses());
         dataConfig.set("highest-killstreak", ps.getHighestKillstreak());
         try {
@@ -297,14 +293,11 @@ public class PlayerStatManager {
         }
         if (playerStats.containsKey(name)) {
             PlayerStats ps = playerStats.get(name);
-            ps.addSkill(skillName);
             playerStats.put(name, ps);
-            dataConfig.set("skills", ps.getSkill());
         } else {
             ArrayList<String> tempArray = new ArrayList<String>();
             tempArray.add(skillName);
             PlayerStats ps = new PlayerStats();
-            ps.addSkill(skillName);
             dataConfig.set("kills", 0);
             dataConfig.set("deaths", 0);
             dataConfig.set("killstreak", 0);
@@ -324,12 +317,6 @@ public class PlayerStatManager {
     
     public Set<String> getPlayerStatKeys() {
         return playerStats.keySet();
-    }
-    public List<String> getIgnoredSkills() {
-        return this.ignoredSkills;
-    }
-    public boolean containsIgnoredSkill(String skillname) {
-        return ignoredSkills.contains(skillname);
     }
     public int getLevelRange() {
         return this.levelRange;

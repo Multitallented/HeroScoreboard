@@ -13,7 +13,6 @@ public class PlayerStats {
     private int deaths=0;
     private Map<String, Integer> nemeses = new HashMap<String, Integer>();
     private Map<String, Integer> weapons = new HashMap<String, Integer>();
-    private Map<String, Integer> skills = new HashMap<String, Integer>();
     private double points = 0;
     private int killstreak = 0;
     private int highestKillstreak = 0;
@@ -72,27 +71,6 @@ public class PlayerStats {
     public void setWeapon(HashMap<String, Integer> weapons) {
         this.weapons = weapons;
     }
-    public String getSkill() {
-        String bestSkill = "None";
-        int i = 0;
-        for (String s : skills.keySet()) {
-            if (i < Math.max(i,skills.get(s))) {
-                i = skills.get(s);
-                bestSkill = s;
-            }
-        }
-        return bestSkill;
-    }
-    public void addSkill(String skill) {
-        if (skills.containsKey(skill)) {
-            skills.put(skill, skills.get(skill) + 1);
-        } else {
-            skills.put(skill, 1);
-        }
-    }
-    public void setSkill(HashMap<String, Integer> skills) {
-        this.skills = skills;
-    }
     public String getNemesis() {
         String bestNemesis = "None";
         int i = 0;
@@ -103,13 +81,6 @@ public class PlayerStats {
             }
         }
         return bestNemesis;
-    }
-    public ArrayList<String> getSkills() {
-        ArrayList<String> tempArray = new ArrayList<String>();
-        for (String s : skills.keySet()) {
-            tempArray.add(s + "," + skills.get(s));
-        }
-        return tempArray;
     }
     public ArrayList<String> getNemeses() {
         ArrayList<String> tempArray = new ArrayList<String>();

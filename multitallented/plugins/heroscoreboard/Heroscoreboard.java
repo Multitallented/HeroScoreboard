@@ -69,7 +69,6 @@ public class HeroScoreboard extends JavaPlugin {
                     message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format((double) ps.getKills() / (double) (ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;
                     message += " pts:" + ChatColor.RED + (int) ps.getPoints() + ChatColor.GRAY;
                     message += " weapon:" + ChatColor.RED + ps.getWeapon() + ChatColor.GRAY;
-                    message += " skill:" + ChatColor.RED + ps.getSkill() + ChatColor.GRAY;
                     message += " nemesis:" + ChatColor.RED + ps.getNemesis() + ChatColor.GRAY;
                     sender.sendMessage(message);
                     return true;
@@ -85,7 +84,6 @@ public class HeroScoreboard extends JavaPlugin {
                     message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format((double) ps.getKills() / ((double) ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;
                     message += " pts:" + ChatColor.RED + (int) ps.getPoints() + ChatColor.GRAY;
                     message += " weapon:" + ChatColor.RED + ps.getWeapon() + ChatColor.GRAY;
-                    message += " skill:" + ChatColor.RED + ps.getSkill() + ChatColor.GRAY;
                     message += " nemesis:" + ChatColor.RED + ps.getNemesis() + ChatColor.GRAY;
                     sender.sendMessage(message);
                     return true;

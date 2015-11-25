@@ -226,7 +226,10 @@ public class PvPListener implements Listener {
         points += preTotalValuables;
         
         double healthBonus = 0;
-        if (dPlayer.getHealth() <= 10) {
+        if (dPlayer.getHealth() <= dPlayer.getMaxHealth() / 4) {
+            healthBonus += psm.getPointQuarterHealth();
+            econBonus += psm.getEconQuarterHealth();
+        } else if (dPlayer.getHealth() <= dPlayer.getMaxHealth() / 2) {
             healthBonus += psm.getPointHalfHealth();
             econBonus += psm.getEconHalfHealth();
         }

@@ -16,7 +16,15 @@ public class PlayerStats {
     private double points = 0;
     private int killstreak = 0;
     private int highestKillstreak = 0;
-    
+    private int karma = 0;
+
+    public void setKarma(int karma) {
+        this.karma = karma;
+    }
+    public int getKarma() {
+        return this.karma;
+    }
+
     public void setHighestKillstreak(int highestKillstreak) {
         this.highestKillstreak = highestKillstreak;
     }

@@ -70,6 +70,7 @@ public class HeroScoreboard extends JavaPlugin {
                     message += " pts:" + ChatColor.RED + (int) ps.getPoints() + ChatColor.GRAY;
                     message += " weapon:" + ChatColor.RED + ps.getWeapon() + ChatColor.GRAY;
                     message += " nemesis:" + ChatColor.RED + ps.getNemesis() + ChatColor.GRAY;
+                    message += " karma:" + ChatColor.LIGHT_PURPLE + ps.getKarma() + ChatColor.GRAY;
                     sender.sendMessage(message);
                     return true;
                 }
@@ -85,6 +86,7 @@ public class HeroScoreboard extends JavaPlugin {
                     message += " pts:" + ChatColor.RED + (int) ps.getPoints() + ChatColor.GRAY;
                     message += " weapon:" + ChatColor.RED + ps.getWeapon() + ChatColor.GRAY;
                     message += " nemesis:" + ChatColor.RED + ps.getNemesis() + ChatColor.GRAY;
+                    message += " karma:" + ChatColor.LIGHT_PURPLE + ps.getKarma() + ChatColor.GRAY;
                     sender.sendMessage(message);
                     return true;
                 }
@@ -143,7 +145,8 @@ public class HeroScoreboard extends JavaPlugin {
                         " D:" + ChatColor.RED + ps.getDeaths() + ChatColor.GRAY
                         + " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format((double) ps.getKills() / ((double) ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY + 
                         " pts:" + ChatColor.RED + ((int) ps.getPoints()));
-                sender.sendMessage(ChatColor.GRAY + "streak: " + ChatColor.RED + ps.getKillstreak() + ChatColor.GRAY + ", Highest Killstreak: " + ChatColor.RED + ps.getHighestKillstreak());
+                sender.sendMessage(ChatColor.GRAY + "streak: " + ChatColor.RED + ps.getKillstreak() + ChatColor.GRAY + ", Highest Killstreak: " + ChatColor.RED + ps.getHighestKillstreak()
+                        + ChatColor.GRAY + ", Karma: " + ChatColor.LIGHT_PURPLE + ps.getKarma());
             }
             return true;
         }

@@ -46,6 +46,10 @@ public class PlayerStatManager {
     private Map<Player, LivingEntity> whoDamagedMap = new HashMap<Player, LivingEntity>();
     private double percentPenalty;
     private boolean itemsOnDeath = false;
+    private int karmaPerKill = 0;
+    private double pricePerKarma = 0;
+    private int karmaPerKillStreak = 0;
+    private double pointsPercentStolen = 0;
     
     public PlayerStatManager(HeroScoreboard plugin, FileConfiguration config) {
         this.plugin = plugin;
@@ -67,6 +71,7 @@ public class PlayerStatManager {
         pointBonusKillJoy = config.getDouble("points.bonus-per-killjoy");
         pointBonusLevel = config.getDouble("points.bonus-per-level");
         pointLoss = config.getDouble("points.points-lost-on-death");
+        pointsPercentStolen = config.getDouble("points.points-percent-stolen", 0);
         
         econBase = config.getDouble("economy.base-reward");
         econBaseStolen = config.getDouble("economy.base-stolen");
@@ -80,6 +85,9 @@ public class PlayerStatManager {
         econBonusKillJoy = config.getDouble("economy.bonus-per-killjoy");
         econBonusLevel = config.getDouble("economy.bonus-per-level");
         itemsOnDeath = config.getBoolean("keep-items-on-death", false);
+        karmaPerKill = config.getDouble("karma.karma-per-kill", 0);
+        pricePerKarma = config.getDouble("karma.price-per-karma", 0);
+        karmaPerKillStreak = config.getDouble("karma.karma-per-killstreak", 0);
         
         File playerFolder = new File(plugin.getDataFolder(), "data"); // Setup the Data Folder if it doesn't already exist
         playerFolder.mkdirs();
@@ -104,7 +112,21 @@ public class PlayerStatManager {
             }
         }
     }
-    
+
+
+    public double getPointsPercentStolen() {
+        return pointsPercentStolen;
+    }
+    public int getKarmaPerKillStreak() {
+        return karmaPerKillStreak;
+    }
+    public double getPricePerKarma() {
+        return pricePerKarma;
+    }
+    public int getKarmaPerKill() {
+        return karmaPerKill;
+    }
+
     private List<ItemStack> processItemStackList(List<String> list) {
         ArrayList<ItemStack> tempArray = new ArrayList<ItemStack>();
         if (list == null)
@@ -229,7 +251,7 @@ public class PlayerStatManager {
             return;
         }
     }
-    public void addPlayerStatsDeath(String name) {
+    public void addPlayerStatsDeath(String name, double pointsStolen, int karma) {
         File dataFile =  new File(plugin.getDataFolder() + "/data", name + ".yml");
         if (!dataFile.exists()) {
             try {
@@ -250,7 +272,8 @@ public class PlayerStatManager {
             PlayerStats ps = playerStats.get(name);
             ps.setDeaths(ps.getDeaths()+1);
             ps.setKillstreak(0);
-            ps.setPoints(ps.getPoints() - pointLoss);
+            ps.setPoints(ps.getPoints() - pointLoss - pointsStolen);
+            ps.setKarma(ps.getKarma + karma);
             playerStats.put(name, ps);
             dataConfig.set("deaths", ps.getDeaths());
             dataConfig.set("killstreak", 0);
@@ -261,10 +284,11 @@ public class PlayerStatManager {
             dataConfig.set("kills", 0);
             dataConfig.set("deaths", 1);
             dataConfig.set("killstreak", 0);
-            dataConfig.set("points", -pointLoss);
+            dataConfig.set("points", -pointLoss - pointsStolen);
             dataConfig.set("weapons", new ArrayList<String>());
             dataConfig.set("skills", new ArrayList<String>());
             dataConfig.set("nemeses", new ArrayList<String>());
+            dataConfig.set("karma", karma);
             playerStats.put(name, ps);
         }
         try {

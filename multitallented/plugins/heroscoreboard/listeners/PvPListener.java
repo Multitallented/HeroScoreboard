@@ -163,6 +163,7 @@ public class PvPListener implements Listener {
         }
         ps.setKills(ps.getKills()+1);
         Economy econ = HeroScoreboard.econ;
+        double econStolen = 0;
         if (econ != null) {
             double balance = econ.bankBalance(player.getName()).balance;
             if (balance < psm.getEconBaseStolen()) {
@@ -171,7 +172,8 @@ public class PvPListener implements Listener {
                     econPay = econBonus;
                 }
                 if (balance - econPay > 0) {
-                    econBonus += (balance - econPay) * psm.getEconPercentStolen();
+                    econStolen = Math.round((balance - econPay) * psm.getEconPercentStolen());
+                    econBonus += econStolen;
                     econPay = econBonus;
                 }
                 if (balance - econPay - psm.getEconBaseDrop() >0) {
@@ -187,23 +189,35 @@ public class PvPListener implements Listener {
             }
             econBonus += psm.getEconBase();
         }
-        
+        final double finalEconStolen = econStolen;
+
         PlayerStats psv = psm.getPlayerStats(player.getName());
         if (psv == null) {
             psv = new PlayerStats();
         }
-        
-        ps.addWeapon(dPlayer.getItemInHand().getType().name().replace("_", " ").toLowerCase());
+
+        if (dPlayer.getItemInHand() != null) {
+            if (dPlayer.getItemInHand().getItemMeta() != null &&
+                    dPlayer.getItemInHand().getItemMeta().getDisplayName() != null) {
+                ps.addWeapon(dPlayer.getItemInHand().getItemMeta().getDisplayName());
+            } else {
+                ps.addWeapon(dPlayer.getItemInHand().getType().name().replace("_", " ").toLowerCase());
+            }
+        }
+
+        //ps.addWeapon(dPlayer.getItemInHand().getType().name().replace("_", " ").toLowerCase());
         ps.addNemesis(player.getDisplayName());
         
         double killStreakBonus = psm.getPointBonusKillStreak() * ps.getKillstreak();
         ps.setKillstreak(ps.getKillstreak()+1);
         econBonus += ps.getKillstreak() * psm.getEconBonusKillStreak();
+        final double finalKillstreakEcon = ps.getKillstreak() * psm.getEconBonusKillStreak();
         if (ps.getKillstreak() >= 3) {
             plugin.getServer().broadcastMessage(ChatColor.GRAY + "[HeroScoreboard] " + dPlayer.getDisplayName() + " is on a killstreak of " + ChatColor.RED + ps.getKillstreak());
         }
         double killJoyBonus = psm.getPointBonusKillJoy() * psv.getKillstreak();
         econBonus += psv.getKillstreak() * psm.getEconBonusKillJoy();
+        final finalKillJoyEcon = psv.getKillstreak() * psm.getEconBonusKillJoy();
         if (psv.getKillstreak() >= 3) {
             plugin.getServer().broadcastMessage(ChatColor.GRAY + "[HeroScoreboard] " + dPlayer.getDisplayName() + " just ended "
                     + player.getDisplayName() + "'s killstreak of " + ChatColor.RED + psv.getKillstreak());
@@ -217,12 +231,15 @@ public class PvPListener implements Listener {
         points += killStreakBonus + killJoyBonus;
         EnumMap<Material, Double> pointValuables = psm.getPointValuables();
         EnumMap<Material, Double> econValuables = psm.getEconValuables();
+        double econValuables = 0;
         for (ItemStack is : player.getInventory().getContents()) {
             if (is != null && pointValuables.containsKey(is.getType()))
                 preTotalValuables += pointValuables.get(is.getType());
             if (is != null && econValuables.containsKey(is.getType()))
-                econBonus += econValuables.get(is.getType());
+                econValuables += econValuables.get(is.getType());
         }
+        final double finalEconValuables = econValuables;
+        econBonus += econValuables;
         points += preTotalValuables;
         
         double healthBonus = 0;
@@ -236,26 +253,80 @@ public class PvPListener implements Listener {
         points += healthBonus;
         
         double pointLevelBonus = 0;
-        
+
+        //Stolen Points
+        int pointsStolen = (int) Math.round(((double) ps.getPoints()) * psm.getPointsPercentStolen());
+        points += pointsStolen;
+
+        //Karma
+        double karmaEcon = Math.max(0, -psm.getPricePerKarma() * ((double) (psv.getKarma() - ps.getKarma())));
+        int karma = psm.getKarmaPerKill() + psm.getKarmaPerKillStreak() * psv.getKillstreak());
+        ps.setKarma(ps.getKarma() - karma);
+        psv.setKarma(ps.getKarma() + karma);
+
+        if (econ != null) {
+            econ.withdrawPlayer(player, karmaEcon);
+            econ.bankDeposit(dPlayer, karmaEcon);
+        }
+
         //pay econ bonus
+        final double finalEconBonus = econBonus;
         if (econ != null)
-            econ.bankDeposit(dPlayer.getName(), econBonus); 
+            econ.bankDeposit(dPlayer.getName(), econBonus);
         //save points
         ps.setPoints(ps.getPoints() + points);
-        
+
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        //////SAVE PLAYER STATS//////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
         psm.setPlayerStats(dPlayer.getName(), ps);
-        psm.addPlayerStatsDeath(player.getName());
-        
-        player.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Death: -" + ChatColor.RED + psm.getPointLoss() + "pts");
-        
+        psm.addPlayerStatsDeath(player.getName(), pointsStolen);
+
+        if (econPay != 0) {
+            player.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Death: -" + ChatColor.RED + (psm.getPointLoss() + pointsStolen) + "pts, " + ChatColor.GREEN + econPay + " money lost");
+        } else {
+            player.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Death: -" + ChatColor.RED + (psm.getPointLoss() + pointsStolen) + "pts");
+        }
+
+        final double finalKillEcon = psm.getEconBase();
+
         //display points
+        if (karma != 0) {
+            if (karmaEcon == 0) {
+                player.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Karma: +" + ChatColor.LIGHT_PURPLE + karma);
+                dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Karma: -" + ChatColor.LIGHT_PURPLE + karma);
+            } else {
+                player.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Karma: +" + ChatColor.LIGHT_PURPLE + karma + ", " + ChatColor.GREEN + karmaEcon + " money lost");
+                dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Karma: -" + ChatColor.LIGHT_PURPLE + karma + ", " + ChatColor.GREEN + karmaEcon + " money gained");
+            }
+        }
         long interval = 10L;
         if (points > 0) {
             final double pointBase = points;
             plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
             @Override
             public void run() {
-                dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Kill: +" + ChatColor.RED + pointBase + "pts");
+                if (finalKillEcon == 0) {
+                    dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Kill: +" + ChatColor.RED + pointBase + "pts");
+                } else {
+                    dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Kill: +" + ChatColor.RED + pointBase + "pts, " + ChatColor.GREEN + finalKillEcon + " money gained");
+                }
+
+            }
+            }, interval);
+            interval += 10L;
+        }
+        if (pointsStolen > 0) {
+            final double finalpointsStolen = pointsStolen;
+            plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+            @Override
+            public void run() {
+                if (finalEconStolen == 0) {
+                    dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Steal: +" + ChatColor.RED + finalPointsStolen + "pts");
+                } else {
+                    dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Steal: +" + ChatColor.RED + finalPointsStolen + "pts, " + ChatColor.GREEN + finalEconStolen + " money gained");
+                }
 
             }
             }, interval);
@@ -266,7 +337,11 @@ public class PvPListener implements Listener {
             plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
             @Override
             public void run() {
-                dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Enemy Items: +" + ChatColor.RED + pointValuable + "pts");
+                if (finalEconValuables == 0) {
+                    dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Enemy Items: +" + ChatColor.RED + pointValuable + "pts");
+                } else {
+                    dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Enemy Items: +" + ChatColor.RED + pointValuable + "pts, " + ChatColor.GREEN + finalEconValuables + " money gained");
+                }
             }
             }, 10L);
             interval += 10L;
@@ -296,7 +371,11 @@ public class PvPListener implements Listener {
             plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
             @Override
             public void run() {
-                dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] KillStreak: +" + ChatColor.RED + pts + "pts");
+                if (finalKillstreakEcon == 0) {
+                    dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] KillStreak: +" + ChatColor.RED + pts + "pts");
+                } else {
+                    dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] KillStreak: +" + ChatColor.RED + pts + "pts, " + ChatColor.GREEN + finalKillstreakEcon + " money gained");
+                }
             }
             }, interval);
             interval += 10L;
@@ -306,7 +385,11 @@ public class PvPListener implements Listener {
             plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
             @Override
             public void run() {
-                dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] KillJoy: +" + ChatColor.RED + pts + "pts");
+                if (finalKillJoyEcon == 0) {
+                    dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] KillJoy: +" + ChatColor.RED + pts + "pts");
+                } else {
+                    dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] KillJoy: +" + ChatColor.RED + pts + "pts, " + ChatColor.GREEN + finalKillJoyEcon + " money gained");
+                }
             }
             }, interval);
             interval += 10L;
@@ -315,7 +398,11 @@ public class PvPListener implements Listener {
         plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
         @Override
         public void run() {
-            dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Total: +" + ChatColor.RED + pts + "pts");
+            if (finalEconBonus == 0) {
+                dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Total: +" + ChatColor.RED + pts + "pts");
+            } else {
+                dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Total: +" + ChatColor.RED + pts + "pts, " + ChatColor.GREEN + finalEconBonus + " money gained");
+            }
         }
         }, interval);
         

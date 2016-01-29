@@ -136,6 +136,7 @@ public class PvPListener implements Listener {
         //Check if repeat kill
         if (lastKilled.containsKey(player) && (new Date()).getTime() - lastKilled.get(player) < psm.getRepeatKillCooldown()) {
             //TODO add code here some time?
+            dPlayer.sendMessage(ChatColor.RED + "[HeroScoreboard] Repeat kill detected.");
             return;
         }
         
@@ -166,11 +167,15 @@ public class PvPListener implements Listener {
         double econStolen = 0;
         if (econ != null) {
             double balance = econ.bankBalance(player.getName()).balance;
-            if (balance < psm.getEconBaseStolen()) {
-                if (balance > 0) {
-                    econBonus += balance;
-                    econPay = econBonus;
-                }
+            if (balance > 0) {
+                econStolen = Math.round(Math.max(0, balance * psm.getEconPercentStolen()));
+
+                econPay = econStolen;
+                econPay -= Math.min(balance - econStolen, psm.getEconBaseDrop());
+
+                econBonus += econStolen;
+                /*econBonus += balance;
+                econPay = econBonus;
                 if (balance - econPay > 0) {
                     econStolen = Math.round((balance - econPay) * psm.getEconPercentStolen());
                     econBonus += econStolen;
@@ -186,8 +191,10 @@ public class PvPListener implements Listener {
                     econPay = balance * psm.getEconPercentDrop();
                     econ.bankWithdraw(player.getName(), econPay);
                 }
+                econBonus += psm.getEconBase();*/
+
+
             }
-            econBonus += psm.getEconBase();
         }
         final double finalEconStolen = econStolen;
 
@@ -217,7 +224,7 @@ public class PvPListener implements Listener {
         }
         double killJoyBonus = psm.getPointBonusKillJoy() * psv.getKillstreak();
         econBonus += psv.getKillstreak() * psm.getEconBonusKillJoy();
-        final finalKillJoyEcon = psv.getKillstreak() * psm.getEconBonusKillJoy();
+        final double finalKillJoyEcon = psv.getKillstreak() * psm.getEconBonusKillJoy();
         if (psv.getKillstreak() >= 3) {
             plugin.getServer().broadcastMessage(ChatColor.GRAY + "[HeroScoreboard] " + dPlayer.getDisplayName() + " just ended "
                     + player.getDisplayName() + "'s killstreak of " + ChatColor.RED + psv.getKillstreak());
@@ -230,13 +237,13 @@ public class PvPListener implements Listener {
         double preTotalValuables = 0;
         points += killStreakBonus + killJoyBonus;
         EnumMap<Material, Double> pointValuables = psm.getPointValuables();
-        EnumMap<Material, Double> econValuables = psm.getEconValuables();
+        EnumMap<Material, Double> econValuablesItems = psm.getEconValuables();
         double econValuables = 0;
         for (ItemStack is : player.getInventory().getContents()) {
             if (is != null && pointValuables.containsKey(is.getType()))
                 preTotalValuables += pointValuables.get(is.getType());
-            if (is != null && econValuables.containsKey(is.getType()))
-                econValuables += econValuables.get(is.getType());
+            if (is != null && econValuablesItems.containsKey(is.getType()))
+                econValuables += econValuablesItems.get(is.getType());
         }
         final double finalEconValuables = econValuables;
         econBonus += econValuables;
@@ -256,23 +263,30 @@ public class PvPListener implements Listener {
 
         //Stolen Points
         int pointsStolen = (int) Math.round(((double) ps.getPoints()) * psm.getPointsPercentStolen());
+        final int finalPointsStolen = pointsStolen;
         points += pointsStolen;
 
         //Karma
         double karmaEcon = Math.max(0, -psm.getPricePerKarma() * ((double) (psv.getKarma() - ps.getKarma())));
-        int karma = psm.getKarmaPerKill() + psm.getKarmaPerKillStreak() * psv.getKillstreak());
+        int karma = psm.getKarmaPerKill() + psm.getKarmaPerKillStreak() * (ps.getKillstreak() - psv.getKillstreak());
         ps.setKarma(ps.getKarma() - karma);
-        psv.setKarma(ps.getKarma() + karma);
+//        psv.setKarma(psv.getKarma() + karma);
 
-        if (econ != null) {
-            econ.withdrawPlayer(player, karmaEcon);
-            econ.bankDeposit(dPlayer, karmaEcon);
+        if (econ != null && karmaEcon != 0) {
+            econ.bankWithdraw(player.getName(), karmaEcon);
+            econ.bankDeposit(dPlayer.getName(), karmaEcon);
         }
 
         //pay econ bonus
         final double finalEconBonus = econBonus;
-        if (econ != null)
-            econ.bankDeposit(dPlayer.getName(), econBonus);
+        if (econ != null) {
+            if (econBonus != 0) {
+                econ.bankDeposit(dPlayer.getName(), econBonus);
+            }
+            if (econPay != 0) {
+                econ.bankWithdraw(player.getName(), econPay);
+            }
+        }
         //save points
         ps.setPoints(ps.getPoints() + points);
 
@@ -281,7 +295,7 @@ public class PvPListener implements Listener {
         //////SAVE PLAYER STATS//////////////////////////////////////////////////////////////
         /////////////////////////////////////////////////////////////////////////////////////
         psm.setPlayerStats(dPlayer.getName(), ps);
-        psm.addPlayerStatsDeath(player.getName(), pointsStolen);
+        psm.addPlayerStatsDeath(player.getName(), pointsStolen, karma);
 
         if (econPay != 0) {
             player.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Death: -" + ChatColor.RED + (psm.getPointLoss() + pointsStolen) + "pts, " + ChatColor.GREEN + econPay + " money lost");
@@ -303,7 +317,7 @@ public class PvPListener implements Listener {
         }
         long interval = 10L;
         if (points > 0) {
-            final double pointBase = points;
+            final double pointBase = psm.getPointBase();
             plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
             @Override
             public void run() {

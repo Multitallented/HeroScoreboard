@@ -85,9 +85,9 @@ public class PlayerStatManager {
         econBonusKillJoy = config.getDouble("economy.bonus-per-killjoy");
         econBonusLevel = config.getDouble("economy.bonus-per-level");
         itemsOnDeath = config.getBoolean("keep-items-on-death", false);
-        karmaPerKill = config.getDouble("karma.karma-per-kill", 0);
+        karmaPerKill = config.getInt("karma.karma-per-kill", 0);
         pricePerKarma = config.getDouble("karma.price-per-karma", 0);
-        karmaPerKillStreak = config.getDouble("karma.karma-per-killstreak", 0);
+        karmaPerKillStreak = config.getInt("karma.karma-per-killstreak", 0);
         
         File playerFolder = new File(plugin.getDataFolder(), "data"); // Setup the Data Folder if it doesn't already exist
         playerFolder.mkdirs();
@@ -105,6 +105,7 @@ public class PlayerStatManager {
                 ps.setPoints(dataConfig.getDouble("points"));
                 ps.setKillstreak(dataConfig.getInt("killstreak"));
                 ps.setHighestKillstreak(dataConfig.getInt("highest-killstreak"));
+                ps.setKarma(dataConfig.getInt("karma"));
                 playerStats.put(dataFile.getName().replace(".yml", ""), ps);
             } catch (Exception e) {
                 System.out.println("[HeroScoreboard] failed to load data from " + dataFile.getName());
@@ -244,6 +245,7 @@ public class PlayerStatManager {
         dataConfig.set("weapons", ps.getWeapons());
         dataConfig.set("nemeses", ps.getNemeses());
         dataConfig.set("highest-killstreak", ps.getHighestKillstreak());
+        dataConfig.set("karma", ps.getKarma());
         try {
             dataConfig.save(dataFile);
         } catch (IOException ex) {
@@ -273,11 +275,12 @@ public class PlayerStatManager {
             ps.setDeaths(ps.getDeaths()+1);
             ps.setKillstreak(0);
             ps.setPoints(ps.getPoints() - pointLoss - pointsStolen);
-            ps.setKarma(ps.getKarma + karma);
+            ps.setKarma(ps.getKarma() + karma);
             playerStats.put(name, ps);
             dataConfig.set("deaths", ps.getDeaths());
             dataConfig.set("killstreak", 0);
             dataConfig.set("points", ps.getPoints());
+            dataConfig.set("karma", ps.getKarma());
         } else {
             PlayerStats ps = new PlayerStats();
             ps.setDeaths(1);
@@ -289,6 +292,7 @@ public class PlayerStatManager {
             dataConfig.set("skills", new ArrayList<String>());
             dataConfig.set("nemeses", new ArrayList<String>());
             dataConfig.set("karma", karma);
+            ps.setKarma(karma);
             playerStats.put(name, ps);
         }
         try {

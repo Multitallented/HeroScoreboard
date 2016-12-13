@@ -43,6 +43,7 @@ public class PlayerStatManager {
     private final int combatTagDuration;
     private final boolean useLogoutPenalty;
     private Map<Player, Long> damageMap = new HashMap<Player, Long>();
+    private Map<Player, Long> combatMap = new HashMap<Player, Long>();
     private Map<Player, LivingEntity> whoDamagedMap = new HashMap<Player, LivingEntity>();
     private double percentPenalty;
     private boolean itemsOnDeath = false;
@@ -50,6 +51,7 @@ public class PlayerStatManager {
     private double pricePerKarma = 0;
     private int karmaPerKillStreak = 0;
     private double pointsPercentStolen = 0;
+    private int karmaReductionPerDay = 20;
     
     public PlayerStatManager(HeroScoreboard plugin, FileConfiguration config) {
         this.plugin = plugin;
@@ -88,6 +90,7 @@ public class PlayerStatManager {
         karmaPerKill = config.getInt("karma.karma-per-kill", 0);
         pricePerKarma = config.getDouble("karma.price-per-karma", 0);
         karmaPerKillStreak = config.getInt("karma.karma-per-killstreak", 0);
+        karmaReductionPerDay = config.getInt("karma.karma-reduction-per-day", 20);
         
         File playerFolder = new File(plugin.getDataFolder(), "data"); // Setup the Data Folder if it doesn't already exist
         playerFolder.mkdirs();
@@ -113,8 +116,32 @@ public class PlayerStatManager {
             }
         }
     }
+    private void loadPlayerStats(String name) {
+        File pluginFolder = plugin.getDataFolder();
+        File dataFolder = new File(pluginFolder, "data");
+        File dataFile = new File(dataFolder, name + ".yml");
+        try {
+            //Load saved region data
+            FileConfiguration dataConfig = new YamlConfiguration();
+            dataConfig.load(dataFile);
+            PlayerStats ps = new PlayerStats();
+            ps.setNemesis(processListMap(dataConfig.getStringList("nemeses")));
+            ps.setWeapon(processListMap(dataConfig.getStringList("weapons")));
+            ps.setDeaths(dataConfig.getInt("deaths"));
+            ps.setKills(dataConfig.getInt("kills"));
+            ps.setPoints(dataConfig.getDouble("points"));
+            ps.setKillstreak(dataConfig.getInt("killstreak"));
+            ps.setHighestKillstreak(dataConfig.getInt("highest-killstreak"));
+            ps.setKarma(dataConfig.getInt("karma"));
 
+            playerStats.put(dataFile.getName().replace(".yml", ""), ps);
+        } catch (Exception e) {
+            System.out.println("[HeroScoreboard] failed to load data from " + dataFile.getName());
+            e.printStackTrace();
+        }
+    }
 
+    public int getKarmaReductionPerDay() { return karmaReductionPerDay; }
     public double getPointsPercentStolen() {
         return pointsPercentStolen;
     }
@@ -204,6 +231,21 @@ public class PlayerStatManager {
         }
         return damageMap.get(p);
     }
+
+    public long getLastDamage(Player p) {
+        if (!combatMap.containsKey(p)) {
+            return -1;
+        }
+        return combatMap.get(p);
+    }
+    public void setCombat(Player p) {
+        combatMap.put(p, System.currentTimeMillis());
+    }
+    public void clearPlayer(Player p) {
+        combatMap.remove(p);
+        damageMap.remove(p);
+        whoDamagedMap.remove(p);
+    }
     
     public boolean getUseCombatTag() {
         return useLogoutPenalty;
@@ -217,6 +259,10 @@ public class PlayerStatManager {
         if (playerStats.containsKey(name)) {
             return playerStats.get(name);
         } else {
+            loadPlayerStats(name);
+            if (playerStats.containsKey(name)) {
+                return playerStats.get(name);
+            }
             return null;
         }
     }

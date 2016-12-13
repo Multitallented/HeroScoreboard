@@ -4,8 +4,11 @@ percent-health-penalty: 80
 keep-items-on-death: false
 level-range: 50
 repeat-kill-cooldown: 60
+delete-essentials-home-on-death: false
+delete-home-radius: 40
 pvp-drops:
   - BONE:4
+  - RAW_CHICKEN:2
 points:
   base-reward: 10.0
   valuable-items:

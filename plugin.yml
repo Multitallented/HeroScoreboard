@@ -11,7 +11,7 @@ depend: [Vault]
 softdepend: [Heroes]
 commands:
    heroscoreboard:
-      aliases: ['heroscore']
+      aliases: ['heroscore', 'score']
       description: HeroScoreboard commands
       usage: /<command>
 permissions:

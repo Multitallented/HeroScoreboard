@@ -1,5 +1,6 @@
 package multitallented.plugins.heroscoreboard.listeners;
 
+import java.io.File;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -9,8 +10,14 @@ import multitallented.plugins.heroscoreboard.HeroScoreboard;
 import multitallented.plugins.heroscoreboard.PlayerStatManager;
 import multitallented.plugins.heroscoreboard.PlayerStats;
 import net.milkbowl.vault.economy.Economy;
+import org.apache.logging.log4j.core.config.ConfigurationException;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -21,8 +28,10 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.projectiles.ProjectileSource;
 
 /**
  *
@@ -51,13 +60,22 @@ public class PvPListener implements Listener {
         }
         
         EntityDamageByEntityEvent edBy = (EntityDamageByEntityEvent) e;
-        Entity damager = edBy.getDamager(); 
+        Entity damageSource = edBy.getDamager();
+        ProjectileSource source = null;
         if (e.getCause() == DamageCause.PROJECTILE) {
-            damager = ((Projectile)damager).getShooter();
+            source = ((Projectile)damageSource).getShooter();
         }
-        if (damager instanceof LivingEntity) {
-            psm.putDamagedPlayer(player);
-            psm.setWhoDamaged(player, (LivingEntity) damager);
+        LivingEntity damager = getLivingEntity(damageSource, source);
+
+        if (damager == null) {
+            return;
+        }
+
+        psm.putDamagedPlayer(player);
+        psm.setWhoDamaged(player, damager);
+        psm.setCombat(player);
+        if (damager instanceof Player) {
+            psm.setCombat((Player) damager);
         }
     }
     
@@ -69,6 +87,16 @@ public class PvPListener implements Listener {
                 player.getInventory().addItem(is);
             }
             itemsOnDeath.remove(player.getName());    
+        }
+    }
+
+    private LivingEntity getLivingEntity(Entity source, ProjectileSource damageSource) {
+        if (source != null && source instanceof LivingEntity) {
+            return (LivingEntity) source;
+        } else if (damageSource instanceof LivingEntity) {
+            return (LivingEntity) damageSource;
+        } else {
+            return null;
         }
     }
     
@@ -117,13 +145,19 @@ public class PvPListener implements Listener {
         }
         
         EntityDamageByEntityEvent edBy = (EntityDamageByEntityEvent) event;
-        Entity damager = edBy.getDamager(); 
+        Entity damageSource = edBy.getDamager();
+        ProjectileSource source = null;
         if (event.getCause() == DamageCause.PROJECTILE) {
-            damager = ((Projectile)damager).getShooter();
+            source = ((Projectile) damageSource).getShooter();
         }
-        if (damager instanceof LivingEntity) {
-            psm.setWhoDamaged(player, (LivingEntity) damager);
+        LivingEntity damager = getLivingEntity(damageSource, source);
+        if (damager == null) {
+            return;
         }
+
+
+        psm.setWhoDamaged(player, damager);
+
         if (!(damager instanceof Player)) {
             return;
         }
@@ -132,11 +166,62 @@ public class PvPListener implements Listener {
         if (!HeroScoreboard.permission.has(player.getWorld().getName(), dPlayer.getName(), "heroscoreboard.participate")) {
             return;
         }
+
+        //Delete homes nearby for the victim
+        File essentialsPlayerFile = new File("plugins/Essentials/userdata/" + player.getUniqueId() + ".yml");
+        if (essentialsPlayerFile.exists() && plugin.getConfig().getBoolean("delete-essentials-home-on-death", false)) {
+            FileConfiguration essentialsPlayerConfig = new YamlConfiguration();
+            try {
+                essentialsPlayerConfig.load(essentialsPlayerFile);
+            } catch (Exception ex) {
+                System.out.println("[HeroScoreboard] failed to read " + player.getUniqueId() + ".yml from essentials");
+            }
+            ConfigurationSection homeSection = essentialsPlayerConfig.getConfigurationSection("homes");
+            if (homeSection != null) {
+                for (String key : homeSection.getKeys(false)) {
+                    ConfigurationSection currentHomeSection = homeSection.getConfigurationSection(key);
+                    Location homeLocation = null;
+                    try {
+                        homeLocation = new Location(Bukkit.getWorld(currentHomeSection.getString("world")),
+                                currentHomeSection.getDouble("x"),
+                                currentHomeSection.getDouble("y"),
+                                currentHomeSection.getDouble("z"));
+                    } catch (Exception ex) {
+                        System.out.println("[HeroScoreboard] failed to read location for home " + key + " for player " + player.getName());
+                    }
+                    if (homeLocation == null) {
+                        continue;
+                    }
+                    if (homeLocation.distanceSquared(player.getLocation()) < plugin.getHomeDeleteDistanceSquared()) {
+                        boolean isOp = dPlayer.isOp();
+                        if (!isOp) {
+                            dPlayer.setOp(true);
+                        }
+                        dPlayer.performCommand("delhome " + player.getName() + ":" + key);
+                        if (!isOp) {
+                            dPlayer.setOp(false);
+                        }
+                        player.sendMessage(ChatColor.RED + "[HeroScoreboard] Your home " + key + " was destroyed by " + dPlayer.getDisplayName());
+                        dPlayer.sendMessage(ChatColor.GRAY + "[HeroScoreboard] You destroyed " + ChatColor.RED + player.getDisplayName() + ChatColor.GRAY + "'s home");
+                    }
+                }
+            }
+        }
+
         
         //Check if repeat kill
         if (lastKilled.containsKey(player) && (new Date()).getTime() - lastKilled.get(player) < psm.getRepeatKillCooldown()) {
-            //TODO add code here some time?
-            dPlayer.sendMessage(ChatColor.RED + "[HeroScoreboard] Repeat kill detected.");
+            PlayerStats ps = psm.getPlayerStats(dPlayer.getName());
+            if (ps == null) {
+                ps = new PlayerStats();
+            }
+            if (ps.getKillstreak() < 1) {
+                dPlayer.sendMessage(ChatColor.RED + "[HeroScoreboard] Repeat kill detected.");
+                return;
+            }
+            ps.setKarma(ps.getKarma() - ps.getKillstreak());
+            dPlayer.sendMessage(ChatColor.RED + "[HeroScoreboard] Repeat kill detected. -" + ChatColor.LIGHT_PURPLE + ps.getKillstreak() + ChatColor.RED + " karma");
+            psm.setPlayerStats(dPlayer.getName(), ps);
             return;
         }
         
@@ -268,6 +353,9 @@ public class PvPListener implements Listener {
 
         //Karma
         double karmaEcon = Math.max(0, -psm.getPricePerKarma() * ((double) (psv.getKarma() - ps.getKarma())));
+        if (psv.getKarma() > 1) {
+            karmaEcon = 0;
+        }
         int karma = psm.getKarmaPerKill() + psm.getKarmaPerKillStreak() * (ps.getKillstreak() - psv.getKillstreak());
         ps.setKarma(ps.getKarma() - karma);
 //        psv.setKarma(psv.getKarma() + karma);

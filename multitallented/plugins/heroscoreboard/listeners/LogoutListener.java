@@ -35,5 +35,6 @@ public class LogoutListener implements Listener {
         } catch (NullPointerException npe) {
             
         }
+        psm.clearPlayer(player);
     }
 }

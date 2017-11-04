@@ -1,8 +1,11 @@
 package multitallented.plugins.heroscoreboard;
 
 import multitallented.plugins.heroscoreboard.listeners.PvPListener;
+
+import java.io.File;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import multitallented.plugins.heroscoreboard.listeners.LogoutListener;
 import multitallented.plugins.heroscoreboard.listeners.PluginListener;
@@ -23,6 +26,7 @@ public class HeroScoreboard extends JavaPlugin {
     protected FileConfiguration config;
     private PlayerStatManager playerStatManager;
     public static Permission permission = null;
+    private double homeDeleteDistanceSquared = 0;
     
     @Override
     public void onDisable() {
@@ -39,6 +43,7 @@ public class HeroScoreboard extends JavaPlugin {
         config = getConfig();
         config.options().copyDefaults(true);
         saveConfig();
+        homeDeleteDistanceSquared = Math.pow(config.getInt("delete-home-radius", 0), 2);
         
         playerStatManager = new PlayerStatManager(this, config);
         
@@ -52,10 +57,53 @@ public class HeroScoreboard extends JavaPlugin {
         if (playerStatManager.getUseCombatTag()) {
             pm.registerEvents(new LogoutListener(playerStatManager), this);
         }
-        
+
+        System.currentTimeMillis();
+        Date date = new Date();
+        date.setSeconds(0);
+        date.setMinutes(0);
+        date.setHours(0);
+        long timeUntilDay = (86400000 + date.getTime() - System.currentTimeMillis()) / 50;
+        System.out.println("[HeroScoreboard] " + timeUntilDay + " ticks until 00:00");
+
+        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+            @Override
+            public void run() {
+                newDay();
+            }
+        }, timeUntilDay, 1728000);
+
         System.out.println("[HeroScoreboard] is now enabled!");
     }
-    
+
+    private void newDay() {
+        File pluginFolder = getDataFolder();
+        File dataFolder = new File(pluginFolder, "data");
+        if (!dataFolder.exists()) {
+            return;
+        }
+        try {
+            for (File playerFile : dataFolder.listFiles()) {
+                String name = playerFile.getName().replace(".yml", "");
+                PlayerStats ps = playerStatManager.getPlayerStats(name);
+                if (ps.getKarma() == 0) {
+                    continue;
+                }
+                if (ps.getKarma() > 0) {
+                    ps.setKarma(Math.max(0, ps.getKarma() - playerStatManager.getKarmaReductionPerDay()));
+                } else {
+                    ps.setKarma(Math.min(0, ps.getKarma() + playerStatManager.getKarmaReductionPerDay()));
+                }
+            }
+        } catch (Exception e) {
+            getLogger().severe("[HeroScoreboard] Failed to reduce karma daily");
+        }
+    }
+
+    public double getHomeDeleteDistanceSquared() {
+        return homeDeleteDistanceSquared;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, org.bukkit.command.Command command, String label, String[] args) {
         if (args.length > 1 && (args[0].equalsIgnoreCase("stats") || args[0].equalsIgnoreCase("who"))) {
@@ -66,7 +114,7 @@ public class HeroScoreboard extends JavaPlugin {
                     String message = ChatColor.GRAY + "[HeroScoreboard] " + p.getName();
                     message += " K:" + ChatColor.RED + ps.getKills() + ChatColor.GRAY;
                     message += " D:" + ChatColor.RED + ps.getDeaths() + ChatColor.GRAY;
-                    message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format((double) ps.getKills() / (double) (ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;
+                    message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format((double) ps.getKills() / (double) (ps.getDeaths() == 0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;
                     message += " pts:" + ChatColor.RED + (int) ps.getPoints() + ChatColor.GRAY;
                     message += " weapon:" + ChatColor.RED + ps.getWeapon() + ChatColor.GRAY;
                     message += " nemesis:" + ChatColor.RED + ps.getNemesis() + ChatColor.GRAY;
@@ -82,7 +130,7 @@ public class HeroScoreboard extends JavaPlugin {
                     String message = ChatColor.GRAY + "[HeroScoreboard] " + op.getName();
                     message += " K:" + ChatColor.RED + ps.getKills() + ChatColor.GRAY;
                     message += " D:" + ChatColor.RED + ps.getDeaths() + ChatColor.GRAY;
-                    message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format((double) ps.getKills() / ((double) ps.getDeaths()==0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;
+                    message += " K/D:" + ChatColor.RED + NumberFormat.getPercentInstance().format((double) ps.getKills() / ((double) ps.getDeaths() == 0 ? 1 : ps.getDeaths())) + ChatColor.GRAY;
                     message += " pts:" + ChatColor.RED + (int) ps.getPoints() + ChatColor.GRAY;
                     message += " weapon:" + ChatColor.RED + ps.getWeapon() + ChatColor.GRAY;
                     message += " nemesis:" + ChatColor.RED + ps.getNemesis() + ChatColor.GRAY;
@@ -92,6 +140,9 @@ public class HeroScoreboard extends JavaPlugin {
                 }
             }
             sender.sendMessage(ChatColor.GRAY + "[HeroScoreboard] Could not find a player by the name of " + args[1]);
+            return true;
+        } else if (args.length > 0 && args[0].equalsIgnoreCase("newday") && sender.isOp()) {
+            newDay();
             return true;
         } else if (args.length > 0 && (args[0].equalsIgnoreCase("list") || args[0].equalsIgnoreCase("top"))) {
             int pageNumber = 1;
@@ -151,8 +202,8 @@ public class HeroScoreboard extends JavaPlugin {
             return true;
         }
         sender.sendMessage(ChatColor.GRAY + "[HeroScoreboard] by Multitallented v0.1");
-        sender.sendMessage(ChatColor.GRAY + "1. /heroscore list <pagenumber> (shows a list of the top players)");
-        sender.sendMessage(ChatColor.GRAY + "2. /heroscore who <playername> (Shows stats of that playername)");
+        sender.sendMessage(ChatColor.GRAY + "1. /score list <pagenumber> (shows a list of the top players)");
+        sender.sendMessage(ChatColor.GRAY + "2. /score who <playername> (Shows stats of that playername)");
         return true;
     }
     private boolean setupEconomy() {
@@ -175,7 +226,7 @@ public class HeroScoreboard extends JavaPlugin {
         return (permission != null);
     }
     public boolean isPlayerInCombat(Player player) {
-        long lastDamage = playerStatManager.getLoggingPlayer(player);
+        long lastDamage = playerStatManager.getLastDamage(player);
         if (lastDamage == -1) {
             return false;
         }
